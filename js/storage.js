@@ -3,14 +3,14 @@
  * Handles Production Entries, 13-Loss Breakdowns, and OEE Computations
  */
 import { MACHINES, LOSS_FIELDS } from './machines.js';
-import { SUPABASE_CONFIG } from './config.js';
 
-const STORAGE_KEY_CONFIG = 'prodtracker_supabase_config';
 const STORAGE_KEY_MACHINES = 'prodtracker_machines_11';
 const STORAGE_KEY_ENTRIES = 'prodtracker_oee_entries';
 
 let supabaseClient = null;
 let isSupabaseActive = false;
+let runtimeSupabaseConfig = { url: '', key: '' };
+let runtimeSupabaseConfigLoaded = false;
 
 /**
  * Generate a RFC-4122 compliant UUID v4 string
@@ -48,12 +48,13 @@ export async function initStorage() {
     }
   }
 
+  await loadRuntimeSupabaseConfig();
+
   // Connect Supabase
-  const config = getSupabaseConfig();
-  if (config.url && config.key && window.supabase) {
+  if (runtimeSupabaseConfig.url && runtimeSupabaseConfig.key && window.supabase) {
     try {
-      supabaseClient = window.supabase.createClient(config.url, config.key);
-      const test = await testSupabaseConnection(config.url, config.key);
+      supabaseClient = window.supabase.createClient(runtimeSupabaseConfig.url, runtimeSupabaseConfig.key);
+      const test = await testSupabaseConnection(runtimeSupabaseConfig.url, runtimeSupabaseConfig.key);
       isSupabaseActive = test.success;
       if (isSupabaseActive) {
         console.log('⚡ Supabase Cloud Database Connected & Active');
@@ -67,49 +68,29 @@ export async function initStorage() {
   return { isSupabaseActive };
 }
 
-/**
- * Retrieve Supabase Configuration from config.js or localStorage
- */
-export function getSupabaseConfig() {
+async function loadRuntimeSupabaseConfig() {
+  if (runtimeSupabaseConfigLoaded) {
+    return runtimeSupabaseConfig;
+  }
+
+  runtimeSupabaseConfigLoaded = true;
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_CONFIG);
-    const localCfg = raw ? JSON.parse(raw) : null;
-    
-    // Priority: config.js first if specified, otherwise localStorage
-    const url = (SUPABASE_CONFIG && SUPABASE_CONFIG.url && SUPABASE_CONFIG.url.trim())
-      ? SUPABASE_CONFIG.url.trim()
-      : (localCfg && localCfg.url ? localCfg.url.trim() : '');
-
-    const key = (SUPABASE_CONFIG && SUPABASE_CONFIG.anonKey && SUPABASE_CONFIG.anonKey.trim())
-      ? SUPABASE_CONFIG.anonKey.trim()
-      : (localCfg && localCfg.key ? localCfg.key.trim() : '');
-
-    return { url, key };
-  } catch (e) {
-    return { url: '', key: '' };
-  }
-}
-
-/**
- * Save Supabase Configuration to localStorage and re-initialize client
- */
-export function saveSupabaseConfig(url, key) {
-  const cleanUrl = (url || '').trim();
-  const cleanKey = (key || '').trim();
-  localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify({ url: cleanUrl, key: cleanKey }));
-  
-  if (cleanUrl && cleanKey && window.supabase) {
-    try {
-      supabaseClient = window.supabase.createClient(cleanUrl, cleanKey);
-      isSupabaseActive = true;
-    } catch (e) {
-      supabaseClient = null;
-      isSupabaseActive = false;
+    const response = await fetch('/api/config', { cache: 'no-store' });
+    if (!response.ok) {
+      return runtimeSupabaseConfig;
     }
-  } else {
-    supabaseClient = null;
-    isSupabaseActive = false;
+
+    const data = await response.json();
+    runtimeSupabaseConfig = {
+      url: (data && data.url ? String(data.url).trim() : ''),
+      key: (data && data.key ? String(data.key).trim() : '')
+    };
+  } catch (error) {
+    runtimeSupabaseConfig = { url: '', key: '' };
   }
+
+  return runtimeSupabaseConfig;
 }
 
 /**
@@ -152,22 +133,14 @@ export function getMachines() {
 }
 
 /**
- * Clear All Production Records (Both LocalStorage and Supabase Cloud if active)
+ * Clear local browser cache only.
+ *
+ * In a shared production deployment, deleting every row in the cloud database
+ * from a public client is too risky. Cloud cleanup should be handled by an
+ * authenticated admin workflow or directly in Supabase.
  */
 export async function clearAllProductionEntries() {
   localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify([]));
-
-  if (isSupabaseActive && supabaseClient) {
-    try {
-      // In Supabase, delete all rows from production_entries
-      const { error } = await supabaseClient.from('production_entries').delete().neq('machine_code', '___non_existent___');
-      if (error) {
-        console.warn('Supabase delete all error:', error.message);
-      }
-    } catch (e) {
-      console.warn('Supabase delete all failed:', e);
-    }
-  }
 
   return true;
 }

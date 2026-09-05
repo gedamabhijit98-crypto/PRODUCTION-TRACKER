@@ -13,9 +13,6 @@ import {
   clearAllProductionEntries,
   calculateOEE,
   getDashboardAnalytics,
-  getSupabaseConfig,
-  saveSupabaseConfig,
-  testSupabaseConnection,
   isConnectedToSupabase
 } from './storage.js';
 import { exportEntriesToCSV } from './export.js';
@@ -104,11 +101,7 @@ const dom = {
   dbStatusText: document.getElementById('db-status-text'),
   modalSupabase: document.getElementById('modal-supabase'),
   btnCloseModal: document.getElementById('btn-close-modal'),
-  cfgSupabaseUrl: document.getElementById('cfg-supabase-url'),
-  cfgSupabaseKey: document.getElementById('cfg-supabase-key'),
-  btnTestSupabase: document.getElementById('btn-test-supabase'),
-  btnSaveSupabase: document.getElementById('btn-save-supabase'),
-  btnDisconnectSupabase: document.getElementById('btn-disconnect-supabase'),
+  btnCloseSupabaseModal: document.getElementById('btn-close-supabase-modal'),
   supabaseTestResult: document.getElementById('supabase-test-result'),
   toastContainer: document.getElementById('toast-container')
 };
@@ -951,10 +944,13 @@ function setupEventListeners() {
 
   // Supabase Settings Modal
   dom.btnOpenDbSettings.addEventListener('click', () => {
-    const cfg = getSupabaseConfig();
-    dom.cfgSupabaseUrl.value = cfg.url || '';
-    dom.cfgSupabaseKey.value = cfg.key || '';
-    dom.supabaseTestResult.style.display = 'none';
+    const connected = isConnectedToSupabase();
+    dom.supabaseTestResult.style.display = 'block';
+    dom.supabaseTestResult.style.background = connected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)';
+    dom.supabaseTestResult.style.color = connected ? 'var(--emerald-400)' : 'var(--rose-400)';
+    dom.supabaseTestResult.textContent = connected
+      ? 'Supabase is connected through Vercel environment variables.'
+      : 'Supabase is not configured. Set VERCEL_SUPABASE_URL and VERCEL_SUPABASE_ANON_KEY in Vercel or .env.local, then run vercel dev.';
     dom.modalSupabase.classList.remove('hidden');
   });
 
@@ -962,75 +958,16 @@ function setupEventListeners() {
     dom.modalSupabase.classList.add('hidden');
   });
 
-  dom.btnTestSupabase.addEventListener('click', async () => {
-    const url = dom.cfgSupabaseUrl.value.trim();
-    const key = dom.cfgSupabaseKey.value.trim();
-    if (!url || !key) {
-      dom.supabaseTestResult.style.display = 'block';
-      dom.supabaseTestResult.style.background = 'rgba(244, 63, 94, 0.15)';
-      dom.supabaseTestResult.style.color = 'var(--rose-400)';
-      dom.supabaseTestResult.textContent = 'Please provide both Project URL and Public Anon Key.';
-      return;
-    }
-
-    dom.btnTestSupabase.disabled = true;
-    dom.btnTestSupabase.textContent = 'Testing...';
-
-    const test = await testSupabaseConnection(url, key);
-    dom.btnTestSupabase.disabled = false;
-    dom.btnTestSupabase.textContent = 'Test Connection';
-
-    dom.supabaseTestResult.style.display = 'block';
-    if (test.success) {
-      dom.supabaseTestResult.style.background = 'rgba(16, 185, 129, 0.15)';
-      dom.supabaseTestResult.style.color = 'var(--emerald-400)';
-      dom.supabaseTestResult.textContent = test.message;
-    } else {
-      dom.supabaseTestResult.style.background = 'rgba(244, 63, 94, 0.15)';
-      dom.supabaseTestResult.style.color = 'var(--rose-400)';
-      dom.supabaseTestResult.textContent = test.message;
-    }
-  });
-
-  dom.btnSaveSupabase.addEventListener('click', async () => {
-    const url = dom.cfgSupabaseUrl.value.trim();
-    const key = dom.cfgSupabaseKey.value.trim();
-    saveSupabaseConfig(url, key);
-    await initStorage();
-    updateSupabaseStatusIndicator();
-    dom.modalSupabase.classList.add('hidden');
-    const isConn = isConnectedToSupabase();
-    if (isConn) {
-      showToast('⚡ Supabase Database successfully connected & active!', 'success');
-    } else {
-      showToast('Supabase settings saved.', 'info');
-    }
-    if (state.currentView === 'view-analytics') {
-      await renderAnalyticsDashboard();
-    }
-  });
-
-  // Disconnect Supabase Cloud
-  if (dom.btnDisconnectSupabase) {
-    dom.btnDisconnectSupabase.addEventListener('click', async () => {
-      saveSupabaseConfig('', '');
-      await initStorage();
-      updateSupabaseStatusIndicator();
-      dom.cfgSupabaseUrl.value = '';
-      dom.cfgSupabaseKey.value = '';
-      dom.supabaseTestResult.style.display = 'none';
+  if (dom.btnCloseSupabaseModal) {
+    dom.btnCloseSupabaseModal.addEventListener('click', () => {
       dom.modalSupabase.classList.add('hidden');
-      showToast('Supabase disconnected. Switched to local storage mode.', 'info');
-      if (state.currentView === 'view-analytics') {
-        await renderAnalyticsDashboard();
-      }
     });
   }
 
   // Clear Production Data Button
   if (dom.btnClearData) {
     dom.btnClearData.addEventListener('click', async () => {
-      const ok = confirm('⚠️ Clear All Production Data?\n\nThis will wipe all existing shift production records and loss occurrences so you can enter fresh data.');
+      const ok = confirm('⚠️ Reset This Browser Session?\n\nThis clears only the local cached records in this browser. Shared cloud data is preserved for other users.');
       if (!ok) return;
 
       await clearAllProductionEntries();
@@ -1039,7 +976,7 @@ function setupEventListeners() {
       if (state.currentView === 'view-analytics') {
         await renderAnalyticsDashboard();
       }
-      showToast('All production records have been cleared! Ready for new entries.', 'info');
+      showToast('Local cache cleared. Shared cloud records were not changed.', 'info');
     });
   }
 }

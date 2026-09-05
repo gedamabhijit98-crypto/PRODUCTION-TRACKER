@@ -2,6 +2,9 @@
 
 A web application designed for precision machine shops and CNC/VMC/HMC production lines. It tracks shift output, multi-part cycle times, operator performance, and 13 specific downtime losses across 11 shopfloor machines, featuring an automated OEE & Loss Occurrence Dashboard.
 
+This repository is organized as a static web app at the project root:
+`index.html`, `assets/`, `css/`, `js/`, `supabase/`, and `manifest.json`.
+
 ---
 
 ## 🏭 11 Shopfloor Machines
@@ -66,16 +69,47 @@ A web application designed for precision machine shops and CNC/VMC/HMC productio
 
 ---
 
-## ⚡ How to Run Locally
+## ⚡ Local Preview
 
-Run the Python HTTP server in this directory:
+This app is now env-driven for Supabase, so the clean local workflow is Vercel's dev server.
+
+Recommended local options:
 ```bash
-python -m http.server 3000
+npx vercel dev
 ```
-Then open your browser to:
+or
+```bash
+npx vercel dev --listen 3000
 ```
-http://localhost:3000
-```
+
+Then open the local URL shown by Vercel. Add a `.env.local` file with `VERCEL_SUPABASE_URL` and `VERCEL_SUPABASE_ANON_KEY` for local testing.
+
+## 🚀 Deployment
+
+Deploy the repository root directly to Vercel.
+
+Deployment checklist:
+1. Keep the root files exactly as they are now.
+2. Ensure `index.html` remains at the host root.
+3. Verify the CDN links for Supabase and Chart.js are reachable in production.
+4. In Vercel, add `VERCEL_SUPABASE_URL` and `VERCEL_SUPABASE_ANON_KEY` as environment variables.
+5. Run `supabase/schema.sql` once in your Supabase SQL editor before using live data.
+
+### Vercel Setup
+
+1. Import the repository into Vercel.
+2. Leave the build command empty unless you later add a bundler.
+3. Set the output root to the repository root.
+4. Add `VERCEL_SUPABASE_URL` and `VERCEL_SUPABASE_ANON_KEY` in the project environment settings.
+5. Deploy once, then verify that saving and dashboard loading work against Supabase.
+6. For local development, use `npx vercel dev` with the same `.env.local` values.
+7. If you want to apply the schema directly, run `supabase/schema.sql` in the Supabase SQL Editor. This environment cannot push schema changes with only the anon key.
+
+### Production Notes
+
+1. Do not commit Supabase credentials to git.
+2. The Clear Data button now only resets local browser cache, which is safer for a shared deployment.
+3. For stricter multi-user control, add Supabase Auth and admin-only actions later.
 
 ---
 
@@ -84,16 +118,8 @@ http://localhost:3000
 1. Log into your [Supabase Dashboard](https://supabase.com).
 2. Open the **SQL Editor** tab.
 3. Paste the contents of `supabase/schema.sql` and click **Run**.
-4. Link your Supabase database in either of two ways:
-   - **Method A (Config File)**: Open `js/config.js` and set:
-     ```javascript
-     export const SUPABASE_CONFIG = {
-       url: 'https://your-project.supabase.co',
-       anonKey: 'your-public-anon-key'
-     };
-     ```
-   - **Method B (In-App Modal)**: Click the **"Supabase: Offline"** button in the header, paste your URL and Public Anon Key, and click **Save & Connect**.
-5. Once connected, the header will display **"🟢 Supabase: Connected"**, and every new production entry is stored live in your Supabase PostgreSQL cloud database!
+4. Add `VERCEL_SUPABASE_URL` and `VERCEL_SUPABASE_ANON_KEY` in Vercel or `.env.local`.
+5. Once connected, the header will display **"🟢 Supabase: Connected"**, and every new production entry is stored live in your Supabase PostgreSQL cloud database.
 
 ---
 

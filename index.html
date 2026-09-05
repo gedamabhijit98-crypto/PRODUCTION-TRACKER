@@ -810,37 +810,23 @@
   <div class="modal-overlay hidden" id="modal-supabase">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Connect Supabase Database</h3>
+        <h3>Supabase Status</h3>
         <button class="modal-close-btn" id="btn-close-modal">&times;</button>
       </div>
       <div class="modal-body">
         <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 18px;">
-          Paste your Supabase credentials to synchronize multi-part production logs and 13-loss breakdown records directly with your cloud PostgreSQL database.
+          This deployment reads Supabase credentials only from Vercel environment variables or local `.env.local` when running `vercel dev`.
         </p>
-
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label for="cfg-supabase-url">Supabase Project URL</label>
-          <input type="text" id="cfg-supabase-url" placeholder="https://your-project.supabase.co" />
-        </div>
-
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label for="cfg-supabase-key">Supabase Public Anon Key</label>
-          <input type="password" id="cfg-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
-        </div>
 
         <div id="supabase-test-result" style="display: none; padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.85rem; margin-top: 12px;"></div>
 
         <div style="margin-top: 18px; padding: 12px; background: rgba(0, 0, 0, 0.3); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
-          <strong style="color: var(--cyan-400)">Quick Setup:</strong> You can also paste your credentials directly in <code>js/config.js</code>.<br />
-          <strong style="color: var(--emerald-400)">SQL Schema:</strong> Run the script in <code>supabase/schema.sql</code> in your Supabase SQL Editor to create tables with public anon RLS permissions.
+          <strong style="color: var(--cyan-400)">Quick Setup:</strong> Set <code>VERCEL_SUPABASE_URL</code> and <code>VERCEL_SUPABASE_ANON_KEY</code> in Vercel Project Settings, or in `.env.local` for local development.<br />
+          <strong style="color: var(--emerald-400)">SQL Schema:</strong> Run the script in <code>supabase/schema.sql</code> in your Supabase SQL Editor before using live data.
         </div>
       </div>
-      <div class="modal-footer" style="justify-content: space-between;">
-        <button type="button" class="btn btn-secondary" id="btn-disconnect-supabase" style="color: var(--rose-400); border-color: rgba(244, 63, 94, 0.3);">Disconnect</button>
-        <div style="display: flex; gap: 10px;">
-          <button type="button" class="btn btn-secondary" id="btn-test-supabase">Test Connection</button>
-          <button type="button" class="btn btn-primary" id="btn-save-supabase">Save & Connect</button>
-        </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button type="button" class="btn btn-primary" id="btn-close-supabase-modal">Close</button>
       </div>
     </div>
   </div>
