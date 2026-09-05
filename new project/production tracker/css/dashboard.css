@@ -1,0 +1,645 @@
+/* ==========================================================================
+   PAGE 1 (MINIMALIST 11 MACHINES) & PAGE 3 (OEE & LOSS ANALYTICS DASHBOARD)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   PAGE 1: MINIMALIST 11 MACHINES GRID (MACHINE NAMES ONLY)
+   -------------------------------------------------------------------------- */
+.minimal-machines-hero {
+  text-align: center;
+  max-width: 720px;
+  margin: 10px auto 40px auto;
+}
+
+.minimal-machines-hero h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #ffffff 40%, var(--cyan-400));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.minimal-machines-hero p {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+}
+
+/* 11 Clean Machine Name Cards Grid */
+.minimal-machines-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.minimal-machine-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 26px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.minimal-machine-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--card-accent, var(--cyan-500));
+  transition: width 0.3s ease;
+}
+
+.minimal-machine-card:hover {
+  transform: translateY(-4px);
+  background: var(--bg-surface-elevated);
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-lg), 0 0 24px var(--card-glow, var(--cyan-glow));
+}
+
+.minimal-machine-card:hover::before {
+  width: 8px;
+}
+
+.card-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-machine-type {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--card-accent, var(--cyan-400));
+}
+
+.card-machine-name {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.card-launch-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.minimal-machine-card:hover .card-launch-icon {
+  background: var(--card-accent, var(--cyan-500));
+  color: #ffffff;
+  transform: translateX(4px);
+  box-shadow: 0 0 12px var(--card-glow, var(--cyan-glow));
+}
+
+/* Category Accent Themes */
+.card-cnc {
+  --card-accent: var(--cyan-500);
+  --card-glow: var(--cyan-glow);
+}
+
+.card-vmc {
+  --card-accent: var(--indigo-400);
+  --card-glow: rgba(99, 102, 241, 0.3);
+}
+
+.card-hmc {
+  --card-accent: var(--amber-400);
+  --card-glow: var(--amber-glow);
+}
+
+/* --------------------------------------------------------------------------
+   PAGE 3: EXECUTIVE OEE & LOSS OCCURRENCE DASHBOARD
+   -------------------------------------------------------------------------- */
+.dashboard-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dashboard-title-area h2 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-title-area p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.dashboard-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-select {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.86rem;
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+}
+
+.dashboard-select:focus {
+  border-color: var(--cyan-500);
+}
+
+/* Executive OEE Cockpit Hero Section */
+.executive-cockpit-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1024px) {
+  .executive-cockpit-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Main Circular OEE Radial Gauge Card */
+.gauge-hero-card {
+  background: linear-gradient(135deg, var(--bg-surface), rgba(17, 26, 46, 0.95));
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-md), 0 0 28px rgba(6, 182, 212, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.gauge-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cyan-400), var(--emerald-400));
+}
+
+.gauge-hero-header {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gauge-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gauge-badge-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cyan-400);
+}
+
+.gauge-main-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.oee-rating-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald-400);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  white-space: nowrap;
+}
+
+/* Circular SVG Radial Gauge */
+.radial-gauge-display {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.oee-svg-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.oee-svg-ring .ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 10;
+}
+
+.oee-svg-ring .ring-fill {
+  fill: none;
+  stroke: url(#oeeGradient);
+  stroke: var(--cyan-400);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 351.85;
+  stroke-dashoffset: 62;
+  transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.4s ease;
+  filter: drop-shadow(0 0 8px var(--cyan-glow));
+}
+
+.radial-center-content {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.radial-oee-value {
+  font-family: var(--font-mono);
+  font-size: 2.3rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.radial-oee-value .unit {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.radial-oee-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.gauge-hero-footer {
+  width: 100%;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.target-marker strong {
+  color: var(--cyan-400);
+}
+
+.status-marker {
+  font-weight: 600;
+  color: var(--emerald-400);
+}
+
+/* 3 Core Pillars Stack */
+.pillars-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.pillar-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.pillar-card:hover {
+  border-color: var(--border-medium);
+  background: var(--bg-surface-elevated);
+}
+
+.pillar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pillar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pillar-name {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pillar-sub {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.pillar-val {
+  font-family: var(--font-mono);
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pillar-avail .pillar-val { color: var(--emerald-400); }
+.pillar-perf .pillar-val  { color: var(--cyan-400); }
+.pillar-qual .pillar-val  { color: var(--indigo-400); }
+
+.pillar-progress-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.pillar-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pillar-avail .pillar-progress-bar {
+  background: linear-gradient(90deg, #059669, var(--emerald-400));
+  box-shadow: 0 0 10px var(--emerald-glow);
+}
+
+.pillar-perf .pillar-progress-bar {
+  background: linear-gradient(90deg, #0284c7, var(--cyan-400));
+  box-shadow: 0 0 10px var(--cyan-glow);
+}
+
+.pillar-qual .pillar-progress-bar {
+  background: linear-gradient(90deg, #4f46e5, var(--indigo-400));
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+}
+
+.pillar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.pillar-footer strong {
+  color: var(--text-secondary);
+}
+
+/* Charts Grid (2 columns) */
+.charts-grid-2 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1024px) {
+  .charts-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.chart-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-container-wrap {
+  position: relative;
+  height: 320px;
+  width: 100%;
+}
+
+/* Machine Comparison Chart Full Width */
+.full-chart-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin-bottom: 32px;
+}
+
+/* "Why Does Loss Occur" Root-Cause Log Table */
+.root-cause-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 40px;
+}
+
+.root-cause-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.root-cause-table th {
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.root-cause-table td {
+  padding: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.root-cause-table tr:hover td {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+}
+
+.loss-pill-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  background: rgba(244, 63, 94, 0.15);
+  color: var(--rose-400);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.why-category-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--indigo-400);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.remarks-text {
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+/* Live DB Streaming Badge */
+.live-stream-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--emerald-400);
+  letter-spacing: 0.04em;
+}
+
+.ping-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--emerald-400);
+  box-shadow: 0 0 8px var(--emerald-400);
+  animation: pingGlow 1.8s infinite ease-in-out;
+}
+
+@keyframes pingGlow {
+  0% { transform: scale(0.9); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.5; }
+  100% { transform: scale(0.9); opacity: 1; }
+}
+
+/* Deep-Dive Loss Ribbon */
+.loss-deepdive-ribbon {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.deepdive-stat-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.deepdive-stat-box:hover {
+  border-color: var(--border-medium);
+  background: var(--bg-surface-elevated);
+}
+
+.deepdive-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.deepdive-value {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.deepdive-value.highlight-rose { color: var(--rose-400); }
+.deepdive-value.highlight-amber { color: var(--amber-400); }
+
+.deepdive-sub {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
