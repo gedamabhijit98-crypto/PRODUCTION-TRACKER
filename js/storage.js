@@ -518,7 +518,7 @@ export function calculateTimeWeightedOEE(logs = []) {
     lossCounts,
     machineOeeList,
     lossOccurrenceList: lossOccurrences.slice(0, 25)
-  };
+  }
 }
 export function calculateTimeWeightedOEE(logs = []) {
   if (!logs || logs.length === 0) {
