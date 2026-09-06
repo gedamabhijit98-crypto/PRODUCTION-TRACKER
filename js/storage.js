@@ -1,419 +1,274 @@
-/**
- * Storage Layer with Supabase Integration and LocalStorage Fallback
- * Handles Production Entries, 13-Loss Breakdowns, and OEE Computations
- */
-import { MACHINES, LOSS_FIELDS } from './machines.js';
+// js/storage.js - Production & Machine Storage with Supabase Integration
 
-const STORAGE_KEY_MACHINES = 'prodtracker_machines_11';
-const STORAGE_KEY_ENTRIES = 'prodtracker_oee_entries';
+export const MACHINES = [
+  { id: '1', name: 'CNC DX 200-1', code: 'CNC-DX-200-1', type: 'CNC', idealCycleTime: 45 },
+  { id: '2', name: 'CNC 200-2', code: 'CNC-200-2', type: 'CNC', idealCycleTime: 50 },
+  { id: '3', name: 'CNC DX 250', code: 'CNC-DX-250', type: 'CNC', idealCycleTime: 60 },
+  { id: '4', name: 'CNC DX12B', code: 'CNC-DX-12B', type: 'CNC', idealCycleTime: 40 },
+  { id: '5', name: 'VMC 1050', code: 'VMC-1050', type: 'VMC', idealCycleTime: 90 },
+  { id: '6', name: 'VMC 1880', code: 'VMC-1880', type: 'VMC', idealCycleTime: 120 },
+  { id: '7', name: 'VMC 850', code: 'VMC-850', type: 'VMC', idealCycleTime: 85 },
+  { id: '8', name: 'VMC HAAS', code: 'VMC-HAAS', type: 'VMC', idealCycleTime: 75 },
+  { id: '9', name: 'VMC PX 20', code: 'VMC-PX-20', type: 'VMC', idealCycleTime: 95 },
+  { id: '10', name: 'HMC 1', code: 'HMC-1', type: 'HMC', idealCycleTime: 110 },
+  { id: '11', name: 'HMC 2', code: 'HMC-2', type: 'HMC', idealCycleTime: 115 }
+];
+
+export const LOSS_CATEGORIES = [
+  'Equipment Failure',
+  'Setup & Adjustment',
+  'Tooling Change',
+  'Startup Warmup',
+  'Minor Stoppages (<5m)',
+  'Reduced Speed',
+  'Process Defects',
+  'Rework Loss',
+  'Operator Shortage',
+  'Material Shortage',
+  'Measurement & Gauging',
+  'Power / Facility Failure',
+  'Planned Cleaning / Inspection'
+];
 
 let supabaseClient = null;
-let isSupabaseActive = false;
-let runtimeSupabaseConfig = { url: '', key: '' };
-let runtimeSupabaseConfigLoaded = false;
 
-/**
- * Generate a RFC-4122 compliant UUID v4 string
- */
-function generateUUID() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return '10000000-1000-4000-8000-' + Math.random().toString(16).substring(2, 14);
+export function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
-/**
- * Initialize Storage and Supabase Cloud Client
- * Fresh start: Mock sample data is eliminated for clean real-world entries.
- */
-export async function initStorage() {
-  if (!localStorage.getItem(STORAGE_KEY_MACHINES)) {
-    localStorage.setItem(STORAGE_KEY_MACHINES, JSON.stringify(MACHINES));
-  }
-
-  // Ensure entries storage is initialized without mock data
-  const existingRaw = localStorage.getItem(STORAGE_KEY_ENTRIES);
-  if (!existingRaw) {
-    localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify([]));
-  } else {
-    // Purge old mock sample entries if they exist
-    try {
-      const parsed = JSON.parse(existingRaw);
-      const containsMock = parsed.some(e => e.id === 'entry-101' || e.id === 'entry-102' || e.id === 'entry-103' || e.id === 'entry-104');
-      if (containsMock) {
-        localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify([]));
-      }
-    } catch (e) {
-      localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify([]));
-    }
-  }
-
-  await loadRuntimeSupabaseConfig();
-
-  // Connect Supabase
-  if (runtimeSupabaseConfig.url && runtimeSupabaseConfig.key && window.supabase) {
-    try {
-      supabaseClient = window.supabase.createClient(runtimeSupabaseConfig.url, runtimeSupabaseConfig.key);
-      const test = await testSupabaseConnection(runtimeSupabaseConfig.url, runtimeSupabaseConfig.key);
-      isSupabaseActive = test.success;
-      if (isSupabaseActive) {
-        console.log('⚡ Supabase Cloud Database Connected & Active');
-      }
-    } catch (err) {
-      console.warn('Supabase initialization failed:', err);
-      isSupabaseActive = false;
-    }
-  }
-
-  return { isSupabaseActive };
-}
-
-async function loadRuntimeSupabaseConfig() {
-  if (runtimeSupabaseConfigLoaded) {
-    return runtimeSupabaseConfig;
-  }
-
-  runtimeSupabaseConfigLoaded = true;
-
+export async function getSupabaseConfig() {
   try {
-    const response = await fetch('/api/config', { cache: 'no-store' });
-    if (!response.ok) {
-      return runtimeSupabaseConfig;
-    }
-
-    const data = await response.json();
-    runtimeSupabaseConfig = {
-      url: (data && data.url ? String(data.url).trim() : ''),
-      key: (data && data.key ? String(data.key).trim() : '')
-    };
-  } catch (error) {
-    runtimeSupabaseConfig = { url: '', key: '' };
-  }
-
-  return runtimeSupabaseConfig;
-}
-
-/**
- * Test Connection to Supabase
- */
-export async function testSupabaseConnection(url, key) {
-  if (!window.supabase) {
-    return { success: false, message: 'Supabase JS library not loaded in browser.' };
-  }
-  const cleanUrl = (url || '').trim();
-  const cleanKey = (key || '').trim();
-  if (!cleanUrl || !cleanKey) {
-    return { success: false, message: 'Please provide both Project URL and Public Anon Key.' };
-  }
-
-  try {
-    const client = window.supabase.createClient(cleanUrl, cleanKey);
-    // Test query on production_entries table
-    const { data, error } = await client.from('production_entries').select('count', { count: 'exact', head: true });
-    if (error) {
-      return { 
-        success: false, 
-        message: `Connected, but table check failed: ${error.message}. Ensure supabase/schema.sql has run in your Supabase SQL Editor.` 
-      };
-    }
-    isSupabaseActive = true;
-    supabaseClient = client;
-    return { success: true, message: 'Connected to Supabase Database successfully! Ready for live streaming.' };
+    const res = await fetch('/api/config');
+    if (!res.ok) throw new Error('API config route unavailable');
+    return await res.json();
   } catch (err) {
-    return { success: false, message: err.message || 'Connection failed.' };
+    console.warn('Unable to retrieve Supabase config:', err);
+    return { url: '', anonKey: '' };
   }
 }
 
-export function isConnectedToSupabase() {
-  return isSupabaseActive && supabaseClient !== null;
+export async function loadRuntimeSupabase() {
+  if (supabaseClient) return supabaseClient;
+  try {
+    const config = await getSupabaseConfig();
+    if (config.url && config.anonKey && window.supabase) {
+      supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+      return supabaseClient;
+    }
+  } catch (err) {
+    console.warn('Fallback to local storage / memory mode:', err.message);
+  }
+  return null;
+}
+
+export async function initStorage() {
+  await loadRuntimeSupabase();
+  if (!localStorage.getItem('prod_entries')) {
+    localStorage.setItem('prod_entries', JSON.stringify([]));
+  }
+  return true;
+}
+
+export async function isConnectedToSupabase() {
+  const client = await loadRuntimeSupabase();
+  return !!client;
+}
+
+export async function testSupabaseConnection() {
+  const client = await loadRuntimeSupabase();
+  if (!client) return { connected: false, message: 'Supabase client credentials unconfigured.' };
+  try {
+    const { error } = await client.from('production_logs').select('id').limit(1);
+    if (error) throw error;
+    return { connected: true, message: 'Database Connected' };
+  } catch (err) {
+    return { connected: false, message: err.message };
+  }
 }
 
 export function getMachines() {
   return MACHINES;
 }
 
-/**
- * Clear local browser cache only.
- *
- * In a shared production deployment, deleting every row in the cloud database
- * from a public client is too risky. Cloud cleanup should be handled by an
- * authenticated admin workflow or directly in Supabase.
- */
-export async function clearAllProductionEntries() {
-  localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify([]));
-
-  return true;
-}
-
-/**
- * Fetch Production Entries (Supabase primary source, LocalStorage fallback)
- */
-export async function getProductionEntries(machineCode = null) {
-  if (isSupabaseActive && supabaseClient) {
+export async function getProductionEntries(filterMachine = null) {
+  const client = await loadRuntimeSupabase();
+  if (client) {
     try {
-      let query = supabaseClient.from('production_entries').select('*').order('created_at', { ascending: false });
-      if (machineCode) {
-        query = query.eq('machine_code', machineCode);
+      let query = client.from('production_logs').select('*').order('created_at', { ascending: false });
+      if (filterMachine && filterMachine !== 'ALL') {
+        query = query.eq('machine_name', filterMachine);
       }
       const { data, error } = await query;
-      if (!error && Array.isArray(data)) {
-        // Return database records directly (even if 0 records, do not fallback to dummy data)
-        return data;
-      }
-      if (error) {
-        console.warn('Supabase query error:', error.message);
-      }
+      if (!error && data) return data;
     } catch (e) {
-      console.warn('Supabase fetch failed, falling back to local:', e);
+      console.warn('Error fetching from Supabase, loading local:', e);
     }
   }
 
-  // Local storage fallback
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_ENTRIES);
-    const entries = raw ? JSON.parse(raw) : [];
-    if (machineCode) {
-      return entries.filter(e => e.machine_code === machineCode);
-    }
-    return entries;
-  } catch (e) {
-    return [];
+  const raw = localStorage.getItem('prod_entries') || '[]';
+  let entries = JSON.parse(raw);
+  if (filterMachine && filterMachine !== 'ALL') {
+    entries = entries.filter(e => e.machine_name === filterMachine);
   }
+  return entries;
 }
 
-/**
- * Calculates Availability, Performance, Quality, and OEE
- * Formula Execution:
- *   Availability = (Operating Time / Planned Time) * 100
- *   Performance = (Ideal Run Time / Operating Time) * 100
- *   Quality = (Good Parts / Total Parts) * 100
- *   OEE = (A * P * Q) / 10000
- */
-export function calculateOEE(shiftHours, parts, lossesObj, rejectedQty) {
-  // Standard shopfloor shift: 8.5 hrs = 465 net planned operating minutes (510m gross minus 45m planned breaks)
-  const plannedTimeMins = Number(shiftHours) === 8.5 ? 465 : (Number(shiftHours) === 7.0 ? 390 : Math.round((Number(shiftHours) || 8.5) * 60));
+export async function saveProductionEntry(entry) {
+  const id = entry.id || generateUUID();
+  const oeeCalculated = calculateOEE(entry);
 
-  // Sum all 13 losses
-  let totalLossesMins = 0;
-  LOSS_FIELDS.forEach(f => {
-    totalLossesMins += Number(lossesObj[f.key]) || 0;
-  });
-
-  const operatingTimeMins = Math.max(0, plannedTimeMins - totalLossesMins);
-  const availabilityRate = plannedTimeMins > 0 
-    ? Math.min(100, (operatingTimeMins / plannedTimeMins) * 100) 
-    : 0;
-
-  // Parts ideal run time
-  let totalQty = 0;
-  let idealRunTimeMins = 0;
-  parts.forEach(p => {
-    const qty = Number(p.qty) || 0;
-    const cycle = Number(p.cycleTime) || 0;
-    totalQty += qty;
-    idealRunTimeMins += (qty * cycle);
-  });
-
-  const performanceRate = operatingTimeMins > 0 
-    ? Math.min(100, (idealRunTimeMins / operatingTimeMins) * 100) 
-    : 0;
-
-  const rejected = Number(rejectedQty) || 0;
-  const goodQty = Math.max(0, totalQty - rejected);
-  const qualityRate = totalQty > 0 
-    ? Math.min(100, (goodQty / totalQty) * 100) 
-    : 100;
-
-  // OEE = (A * P * Q) / 10000
-  const oeeRate = ((availabilityRate * performanceRate * qualityRate) / 10000);
-
-  return {
-    plannedTimeMins,
-    totalLossesMins,
-    operatingTimeMins,
-    idealRunTimeMins: Number(idealRunTimeMins.toFixed(2)),
-    totalQty,
-    goodQty,
-    rejectedQty: rejected,
-    availabilityRate: Number(availabilityRate.toFixed(1)),
-    performanceRate: Number(performanceRate.toFixed(1)),
-    qualityRate: Number(qualityRate.toFixed(1)),
-    oeeRate: Number(oeeRate.toFixed(1))
-  };
-}
-
-/**
- * Save New Production Entry
- * Saves to LocalStorage and writes directly to Supabase cloud database if connected.
- */
-export async function saveProductionEntry(entryData) {
-  const id = generateUUID();
-  const nowIso = new Date().toISOString();
-
-  const record = {
+  const fullEntry = {
+    ...entry,
     id,
-    ...entryData,
-    created_at: nowIso
+    oee_rate: oeeCalculated.oee,
+    availability: oeeCalculated.availability,
+    performance: oeeCalculated.performance,
+    quality: oeeCalculated.quality,
+    created_at: entry.created_at || new Date().toISOString()
   };
 
-  // 1. Local storage save
-  const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_ENTRIES) || '[]');
-  existing.unshift(record);
-  localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(existing));
-
-  // 2. Supabase Cloud save
-  let supabaseSynced = false;
-  if (isSupabaseActive && supabaseClient) {
+  const client = await loadRuntimeSupabase();
+  if (client) {
     try {
-      const { data, error } = await supabaseClient.from('production_entries').insert([record]).select();
-      if (!error) {
-        supabaseSynced = true;
-      } else {
-        console.warn('Supabase insert error:', error.message);
-      }
-    } catch (e) {
-      console.warn('Supabase insert failed:', e);
+      await client.from('production_logs').upsert([fullEntry]);
+    } catch (err) {
+      console.error('Supabase write error:', err);
     }
   }
 
-  return { success: true, record, supabaseSynced };
+  const entries = await getProductionEntries();
+  const index = entries.findIndex(e => e.id === id);
+  if (index >= 0) {
+    entries[index] = fullEntry;
+  } else {
+    entries.unshift(fullEntry);
+  }
+  localStorage.setItem('prod_entries', JSON.stringify(entries));
+  return fullEntry;
 }
 
-/**
- * Delete a Single Production Entry
- */
-export async function deleteProductionEntry(entryId) {
-  const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_ENTRIES) || '[]');
-  const filtered = existing.filter(e => e.id !== entryId);
-  localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(filtered));
-
-  if (isSupabaseActive && supabaseClient) {
+export async function deleteProductionEntry(id) {
+  const client = await loadRuntimeSupabase();
+  if (client) {
     try {
-      await supabaseClient.from('production_entries').delete().eq('id', entryId);
-    } catch (e) {
-      console.warn('Supabase delete failed:', e);
+      await client.from('production_logs').delete().eq('id', id);
+    } catch (err) {
+      console.error('Supabase delete error:', err);
     }
   }
 
+  let entries = JSON.parse(localStorage.getItem('prod_entries') || '[]');
+  entries = entries.filter(e => e.id !== id);
+  localStorage.setItem('prod_entries', JSON.stringify(entries));
   return true;
 }
 
-/**
- * Aggregate Analytics for Executive Dashboard
- * Handles 0 entries gracefully with clear empty-state KPIs.
- */
-export async function getDashboardAnalytics(machineCode = null) {
-  const entries = await getProductionEntries(machineCode);
-
-  if (!entries || entries.length === 0) {
-    const emptyBreakdown = {};
-    const emptyCounts = {};
-    LOSS_FIELDS.forEach(f => {
-      emptyBreakdown[f.key] = 0;
-      emptyCounts[f.key] = 0;
-    });
-
-    const emptyMachineOeeList = MACHINES.map(m => ({ name: m.name, oee: 0 }));
-
-    return {
-      avgOEE: '0.0',
-      avgAvailability: '0.0',
-      avgPerformance: '0.0',
-      avgQuality: '0.0',
-      totalLossesMins: 0,
-      totalLossIncidents: 0,
-      totalPlannedTimeMins: 0,
-      totalOperatingTimeMins: 0,
-      totalIdealRunTimeMins: 0,
-      totalOutput: 0,
-      totalGood: 0,
-      totalScrap: 0,
-      lossBreakdown: emptyBreakdown,
-      lossCounts: emptyCounts,
-      machineOeeList: emptyMachineOeeList,
-      lossOccurrenceList: []
-    };
+export async function clearAllProductionEntries() {
+  const client = await loadRuntimeSupabase();
+  if (client) {
+    try {
+      await client.from('production_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    } catch (e) {
+      console.warn(e);
+    }
   }
+  localStorage.setItem('prod_entries', JSON.stringify([]));
+  return true;
+}
+
+export function calculateOEE(data) {
+  const plannedTime = Number(data.planned_time || data.plannedTimeMinutes || 480);
+  const downtime = Number(data.downtime || data.downtimeMinutes || 0);
+  const operatingTime = Math.max(0, plannedTime - downtime);
+  const totalProduced = Number(data.total_output || data.totalProduced || 0);
+  const defectiveUnits = Number(data.scrap_qty || data.defectiveUnits || 0);
+  const idealCycleTime = Number(data.ideal_cycle_time || data.idealCycleTimeSeconds || 60);
+
+  if (plannedTime <= 0 || totalProduced <= 0 || operatingTime <= 0) {
+    return { availability: 0, performance: 0, quality: 0, oee: 0 };
+  }
+
+  const availability = operatingTime / plannedTime;
+  const performance = Math.min(1.0, (totalProduced * idealCycleTime) / (operatingTime * 60));
+  const quality = Math.max(0, (totalProduced - defectiveUnits) / totalProduced);
+  const oee = availability * performance * quality;
+
+  return {
+    availability: Number((availability * 100).toFixed(1)),
+    performance: Number((performance * 100).toFixed(1)),
+    quality: Number((quality * 100).toFixed(1)),
+    oee: Number((oee * 100).toFixed(1))
+  };
+}
+
+export async function getDashboardAnalytics(machineName = null) {
+  const entries = await getProductionEntries(machineName);
 
   let sumOee = 0;
   let sumAvail = 0;
   let sumPerf = 0;
   let sumQual = 0;
-  let totalLossesMins = 0;
   let totalPlannedTimeMins = 0;
   let totalOperatingTimeMins = 0;
+  let totalLossesMins = 0;
   let totalIdealRunTimeMins = 0;
   let totalOutput = 0;
   let totalGood = 0;
   let totalScrap = 0;
+  let totalLossIncidents = 0;
 
-  // Initialize loss tallies (minutes) and frequency counts (times occurred)
   const lossTally = {};
   const lossCounts = {};
-  LOSS_FIELDS.forEach(f => {
-    lossTally[f.key] = 0;
-    lossCounts[f.key] = 0;
+  LOSS_CATEGORIES.forEach(cat => {
+    lossTally[cat] = 0;
+    lossCounts[cat] = 0;
   });
 
-  let totalLossIncidents = 0;
   const lossOccurrences = [];
 
   entries.forEach(e => {
-    sumOee += Number(e.oee_rate) || 0;
-    sumAvail += Number(e.availability_rate) || 0;
-    sumPerf += Number(e.performance_rate) || 0;
-    sumQual += Number(e.quality_rate) || 0;
-    totalLossesMins += Number(e.total_losses_mins) || 0;
-    totalPlannedTimeMins += Number(e.planned_time_mins) || 0;
-    totalOperatingTimeMins += Number(e.operating_time_mins) || 0;
-    totalIdealRunTimeMins += Number(e.ideal_run_time_mins) || 0;
-    totalOutput += Number(e.total_qty) || 0;
-    totalGood += Number(e.good_qty) || 0;
-    totalScrap += Number(e.rejected_qty) || 0;
+    const oeeData = calculateOEE(e);
+    sumOee += oeeData.oee;
+    sumAvail += oeeData.availability;
+    sumPerf += oeeData.performance;
+    sumQual += oeeData.quality;
 
-    // Sum 13 losses duration and count occurrences
-    LOSS_FIELDS.forEach(f => {
-      const val = Number(e[f.key]) || 0;
-      if (val > 0) {
-        lossTally[f.key] += val;
-        lossCounts[f.key] += 1;
-        totalLossIncidents += 1;
-      }
-    });
+    const planned = Number(e.planned_time || 480);
+    const down = Number(e.downtime || 0);
+    const output = Number(e.total_output || 0);
+    const scrap = Number(e.scrap_qty || 0);
+    const cycle = Number(e.ideal_cycle_time || 60);
 
-    // Record detailed "Why & How Loss Occurred" log
-    if (e.remarks || e.total_losses_mins > 0) {
-      let topCategory = 'Standard Stoppage';
-      let topWhy = 'Operational Pause';
-      let maxVal = 0;
+    totalPlannedTimeMins += planned;
+    totalOperatingTimeMins += Math.max(0, planned - down);
+    totalLossesMins += down;
+    totalIdealRunTimeMins += (output * cycle) / 60;
+    totalOutput += output;
+    totalGood += Math.max(0, output - scrap);
+    totalScrap += scrap;
 
-      LOSS_FIELDS.forEach(f => {
-        const val = Number(e[f.key]) || 0;
-        if (val > maxVal) {
-          maxVal = val;
-          topCategory = f.label;
-          topWhy = f.category || 'General';
-        }
-      });
+    if (e.loss_category && lossTally[e.loss_category] !== undefined) {
+      lossTally[e.loss_category] += down;
+      lossCounts[e.loss_category] += 1;
+      totalLossIncidents += 1;
+    }
 
+    if (down > 0) {
       lossOccurrences.push({
-        id: e.id,
-        date: e.log_date,
-        shift: e.shift,
-        machineName: e.machine_name,
-        operator: e.operator_name,
-        primaryLoss: topCategory,
-        whyCategory: topWhy,
-        lossMins: maxVal,
-        totalLossMins: e.total_losses_mins,
-        howItOccurred: e.remarks || `${topCategory} incident reported during shift execution`
+        machineName: e.machine_name || 'Machine',
+        lossCategory: e.loss_category || 'Unspecified Loss',
+        durationMins: down,
+        howItOccurred: e.remarks || 'Production disturbance reported during shift'
       });
     }
   });
 
-  const count = entries.length;
+  const count = entries.length || 1;
 
-  // Machine-level OEE comparison across all 11 machines
   const machineOeeMap = {};
   MACHINES.forEach(m => {
     machineOeeMap[m.name] = { totalOee: 0, count: 0 };
@@ -421,7 +276,7 @@ export async function getDashboardAnalytics(machineCode = null) {
 
   entries.forEach(e => {
     if (machineOeeMap[e.machine_name]) {
-      machineOeeMap[e.machine_name].totalOee += (Number(e.oee_rate) || 0);
+      machineOeeMap[e.machine_name].totalOee += Number(e.oee_rate || 0);
       machineOeeMap[e.machine_name].count += 1;
     }
   });
@@ -449,5 +304,102 @@ export async function getDashboardAnalytics(machineCode = null) {
     lossCounts,
     machineOeeList,
     lossOccurrenceList: lossOccurrences.slice(0, 25)
+  };
+}
+
+export function calculateTimeWeightedOEE(logs = []) {
+  if (!logs || logs.length === 0) {
+    return {
+      avgOEE: '0.0',
+      avgAvailability: '0.0',
+      avgPerformance: '0.0',
+      avgQuality: '0.0',
+      totalPlannedTimeMins: 0,
+      totalOperatingTimeMins: 0,
+      totalLossesMins: 0,
+      totalOutput: 0,
+      totalGood: 0,
+      totalScrap: 0
+    };
+  }
+
+  let sumOee = 0;
+  let sumAvail = 0;
+  let sumPerf = 0;
+  let sumQual = 0;
+  let totalPlanned = 0;
+  let totalOp = 0;
+  let totalDowntime = 0;
+  let totalOut = 0;
+  let totalGoodQty = 0;
+  let totalScrapQty = 0;
+
+  logs.forEach(entry => {
+    const planned = Number(entry.planned_time || entry.plannedTimeMinutes || 480);
+    const down = Number(entry.downtime || entry.downtimeMinutes || 0);
+    const op = Math.max(0, planned - down);
+    const out = Number(entry.total_output || entry.totalProduced || 0);
+    const scrap = Number(entry.scrap_qty || entry.defectiveUnits || 0);
+    const good = Math.max(0, out - scrap);
+
+    totalPlanned += planned;
+    totalOp += op;
+    totalDowntime += down;
+    totalOut += out;
+    totalGoodQty += good;
+    totalScrapQty += scrap;
+
+    const oeeData = calculateOEE(entry);
+    sumOee += Number(oeeData.oee || 0);
+    sumAvail += Number(oeeData.availability || 0);
+    sumPerf += Number(oeeData.performance || 0);
+    sumQual += Number(oeeData.quality || 0);
+  });
+
+  const count = logs.length;
+
+  return {
+    avgOEE: (sumOee / count).toFixed(1),
+    avgAvailability: (sumAvail / count).toFixed(1),
+    avgPerformance: (sumPerf / count).toFixed(1),
+    avgQuality: (sumQual / count).toFixed(1),
+    totalPlannedTimeMins: totalPlanned,
+    totalOperatingTimeMins: totalOp,
+    totalLossesMins: totalDowntime,
+    totalOutput: totalOut,
+    totalGood: totalGoodQty,
+    totalScrap: totalScrapQty
+  };
+}
+
+export async function getPeriodicAnalytics(periodType = 'daily', specificDate = null, machineCode = null) {
+  const allLogs = await getProductionEntries(machineCode);
+  const baseAnalytics = await getDashboardAnalytics(machineCode);
+
+  let filteredLogs = allLogs;
+  const now = new Date();
+
+  if (periodType === 'daily') {
+    const targetDate = specificDate || now.toISOString().split('T')[0];
+    filteredLogs = allLogs.filter(log => {
+      const logDate = (log.created_at || log.shift_date || '').split('T')[0];
+      return logDate === targetDate;
+    });
+  } else if (periodType === 'weekly') {
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    filteredLogs = allLogs.filter(log => new Date(log.created_at || log.shift_date) >= sevenDaysAgo);
+  } else if (periodType === 'monthly') {
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    filteredLogs = allLogs.filter(log => new Date(log.created_at || log.shift_date) >= thirtyDaysAgo);
+  }
+
+  const oeeMetrics = calculateTimeWeightedOEE(filteredLogs);
+
+  return {
+    ...baseAnalytics,
+    ...oeeMetrics,
+    periodType,
+    entriesCount: filteredLogs.length,
+    logs: filteredLogs
   };
 }
