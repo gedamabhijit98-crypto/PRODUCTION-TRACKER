@@ -4,7 +4,6 @@
 -- Paste this script into your Supabase project's SQL Editor and click "Run".
 -- ==============================================================================
 
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Create Machines Table (11 Machines)
