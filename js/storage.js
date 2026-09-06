@@ -363,3 +363,34 @@ export function calculateTimeWeightedOEE(logs = []) {
     totalScrap: totalScrapQty
   };
 }
+export async function getPeriodicAnalytics(periodType = 'daily', specificDate = null, machineCode = null) {
+  const allLogs = await getProductionEntries(machineCode);
+  const baseAnalytics = await getDashboardAnalytics(machineCode);
+
+  let filteredLogs = allLogs;
+  const now = new Date();
+
+  if (periodType === 'daily') {
+    const targetDate = specificDate || now.toISOString().split('T')[0];
+    filteredLogs = allLogs.filter(log => {
+      const logDate = (log.created_at || log.shift_date || '').split('T')[0];
+      return logDate === targetDate;
+    });
+  } else if (periodType === 'weekly') {
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    filteredLogs = allLogs.filter(log => new Date(log.created_at || log.shift_date) >= sevenDaysAgo);
+  } else if (periodType === 'monthly') {
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    filteredLogs = allLogs.filter(log => new Date(log.created_at || log.shift_date) >= thirtyDaysAgo);
+  }
+
+  const oeeMetrics = calculateTimeWeightedOEE(filteredLogs);
+
+  return {
+    ...baseAnalytics,
+    ...oeeMetrics,
+    periodType,
+    entriesCount: filteredLogs.length,
+    logs: filteredLogs
+  };
+}
