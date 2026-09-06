@@ -394,3 +394,13 @@ export async function getPeriodicAnalytics(periodType = 'daily', specificDate = 
     logs: filteredLogs
   };
 }
+export async function getSupabaseConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) throw new Error('Failed to fetch config');
+    return await res.json();
+  } catch (err) {
+    console.warn('Unable to retrieve Supabase config:', err);
+    return { url: '', anonKey: '' };
+  }
+}
