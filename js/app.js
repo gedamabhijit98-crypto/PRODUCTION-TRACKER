@@ -1,6 +1,6 @@
 /**
  * Industrial Production & OEE Tracker - Main Application Controller
- * Handles 3-Page Navigation, 11 Machines, 13-Loss Calculations, and Chart.js Analytics
+ * Handles 3-Page Navigation, 11 Machines, 13-Loss Calculations, Periodic Analytics, and Chart.js
  */
 
 import { MACHINES, LOSS_FIELDS } from './machines.js';
@@ -12,19 +12,28 @@ import {
   deleteProductionEntry,
   clearAllProductionEntries,
   calculateOEE,
-  getDashboardAnalytics,
+  calculateTimeWeightedOEE,
+  getPeriodicAnalytics,
+  seedDemoShiftData,
+  getSupabaseConfig,
+  saveSupabaseConfig,
+  testSupabaseConnection,
   isConnectedToSupabase
 } from './storage.js';
-import { exportEntriesToCSV } from './export.js';
+import { exportEntriesToCSV, exportPeriodicReportToCSV } from './export.js';
 
 // Global Application State
 const state = {
   currentView: 'view-machines',
   currentMachine: MACHINES[0],
   dashFilterMachine: 'ALL',
+  periodType: 'daily', // 'daily', 'weekly', 'monthly', 'overall'
+  periodValue: 'LATEST', // 'LATEST' or specific period key
+  chartTrendOee: null,
+  chartTrendLosses: null,
   chartLossesPareto: null,
   chartLossesDonut: null,
-  chartMachinesOee: null
+  lastPeriodicData: null
 };
 
 // DOM Cache
@@ -75,10 +84,39 @@ const dom = {
   liveCalcPerformance: document.getElementById('live-calc-performance'),
   liveCalcQuality: document.getElementById('live-calc-quality'),
   liveCalcOee: document.getElementById('live-calc-oee'),
+  liveCalcProductivity: document.getElementById('live-calc-productivity'),
 
-  // Page 3: Dashboard Elements
+  // Page 3: Periodic Analytics Dashboard Elements
   dashFilterMachine: document.getElementById('dash-filter-machine'),
+  btnSeedSample: document.getElementById('btn-seed-sample'),
+  btnExportPeriodCsv: document.getElementById('btn-export-period-csv'),
+  selectPeriodInterval: document.getElementById('select-period-interval'),
+  btnPeriodPrev: document.getElementById('btn-period-prev'),
+  btnPeriodNext: document.getElementById('btn-period-next'),
+  txtActivePeriod: document.getElementById('txt-active-period'),
+  badgeActivePeriodLabel: document.getElementById('badge-active-period-label'),
+  labelIntervalPicker: document.getElementById('label-interval-picker'),
+  txtActiveTargetTitle: document.getElementById('txt-active-target-title'),
+  machineRosterPills: document.getElementById('machine-roster-pills'),
+  periodTabsGroup: document.getElementById('period-tabs-group'),
+  targetKickerName: document.getElementById('target-kicker-name'),
+  targetMainTitle: document.getElementById('target-main-title'),
+  targetOeeSub: document.getElementById('target-oee-sub'),
+  dashIdealTimeDisplay: document.getElementById('dash-ideal-time-display'),
+  matrixPeriodSubtitle: document.getElementById('matrix-period-subtitle'),
+  machineMatrixTbody: document.getElementById('machine-matrix-tbody'),
+  titleTrendOee: document.getElementById('title-trend-oee'),
+  badgeTrendPeriodType: document.getElementById('badge-trend-period-type'),
+  titleTrendLosses: document.getElementById('title-trend-losses'),
+  titleLossPareto: document.getElementById('title-loss-pareto'),
+  titleLossesTable: document.getElementById('title-losses-table'),
+  lossesBreakdownTbody: document.getElementById('losses-breakdown-tbody'),
+  titlePeriodHistory: document.getElementById('title-period-history'),
+  badgeHistoryHorizon: document.getElementById('badge-history-horizon'),
+  periodHistoryTbody: document.getElementById('period-history-tbody'),
+
   dashMetricOee: document.getElementById('dash-metric-oee'),
+  dashMetricProductivity: document.getElementById('dash-metric-productivity'),
   oeeRatingBadge: document.getElementById('oee-rating-badge'),
   dashMetricAvail: document.getElementById('dash-metric-avail'),
   dashTotalLosses: document.getElementById('dash-total-losses'),
@@ -101,7 +139,11 @@ const dom = {
   dbStatusText: document.getElementById('db-status-text'),
   modalSupabase: document.getElementById('modal-supabase'),
   btnCloseModal: document.getElementById('btn-close-modal'),
-  btnCloseSupabaseModal: document.getElementById('btn-close-supabase-modal'),
+  cfgSupabaseUrl: document.getElementById('cfg-supabase-url'),
+  cfgSupabaseKey: document.getElementById('cfg-supabase-key'),
+  btnTestSupabase: document.getElementById('btn-test-supabase'),
+  btnSaveSupabase: document.getElementById('btn-save-supabase'),
+  btnDisconnectSupabase: document.getElementById('btn-disconnect-supabase'),
   supabaseTestResult: document.getElementById('supabase-test-result'),
   toastContainer: document.getElementById('toast-container')
 };
@@ -193,7 +235,7 @@ function switchView(targetViewId) {
 }
 
 /**
- * PAGE 1: Render Only the 11 Machine Names
+ * PAGE 1: Render Only the 11 Machine Names with Fill-up & Analyze Actions
  */
 function renderMinimalMachines() {
   dom.minimalMachinesGrid.innerHTML = '';
@@ -208,16 +250,31 @@ function renderMinimalMachines() {
         <span class="card-machine-type">${machine.category} Center</span>
         <h3 class="card-machine-name">${machine.name}</h3>
       </div>
-      <div class="card-launch-icon" title="Open Fill-up Page">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-          <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
+      <div class="card-action-links">
+        <button type="button" class="btn-card-analyze" data-code="${machine.code}" title="Analyze Daily, Weekly, Monthly OEE & Losses">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          Analyze
+        </button>
+        <div class="card-launch-icon" title="Log Production Shift">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </div>
       </div>
     `;
 
-    // Clicking opens the dedicated fillup page for that machine
-    card.addEventListener('click', () => {
+    // Handle clicks: analyze button jumps to analytics, card body opens fillup
+    card.addEventListener('click', (e) => {
+      const btnAnalyze = e.target.closest('.btn-card-analyze');
+      if (btnAnalyze) {
+        e.stopPropagation();
+        selectMachine(machine.code);
+        switchView('view-analytics');
+        return;
+      }
       openMachineFillup(machine.code);
     });
 
@@ -249,210 +306,137 @@ function populateMachineSelectors() {
 }
 
 /**
- * PAGE 2: Open Dedicated Machine Fill-Up View
+ * Fast Machine Selection Helper
  */
-function openMachineFillup(machineCode) {
-  const machine = MACHINES.find(m => m.code === machineCode) || MACHINES[0];
-  state.currentMachine = machine;
-
-  dom.activeMachineName.textContent = machine.name;
-  dom.activeMachineType.textContent = machine.category;
-  dom.selectQuickMachine.value = machine.code;
-
-  switchView('view-fillup');
-  updateLiveOeeCalculations();
-}
-
-/**
- * Set Form Default Values
- */
-function setDefaultFormValues() {
-  dom.inputDate.value = new Date().toISOString().split('T')[0];
-  dom.inputShift.value = getCurrentShift();
-  dom.inputShiftHours.value = '8.5';
-  if (dom.inputOperator) dom.inputOperator.value = '';
-  if (dom.inputPart1Name) dom.inputPart1Name.value = '';
-  if (dom.inputPart1Cycle) dom.inputPart1Cycle.value = '0';
-  if (dom.inputPart1Qty) dom.inputPart1Qty.value = '0';
-  if (dom.inputPart2Name) dom.inputPart2Name.value = '';
-  if (dom.inputPart2Cycle) dom.inputPart2Cycle.value = '0';
-  if (dom.inputPart2Qty) dom.inputPart2Qty.value = '0';
-  if (dom.inputPart3Name) dom.inputPart3Name.value = '';
-  if (dom.inputPart3Cycle) dom.inputPart3Cycle.value = '0';
-  if (dom.inputPart3Qty) dom.inputPart3Qty.value = '0';
-  if (dom.inputRejectedQty) dom.inputRejectedQty.value = '0';
-  LOSS_FIELDS.forEach(f => {
-    const el = document.getElementById(f.key);
-    if (el) el.value = 0;
-  });
-  if (dom.inputRemarks) dom.inputRemarks.value = '';
-}
-
-/**
- * Gather current form data for live OEE calculation
- */
-function getFormValues() {
-  const shiftHours = Number(dom.inputShiftHours.value) || 8.5;
-
-  const parts = [
-    {
-      name: dom.inputPart1Name.value.trim(),
-      cycleTime: Number(dom.inputPart1Cycle.value) || 0,
-      qty: Number(dom.inputPart1Qty.value) || 0
-    },
-    {
-      name: dom.inputPart2Name.value.trim(),
-      cycleTime: Number(dom.inputPart2Cycle.value) || 0,
-      qty: Number(dom.inputPart2Qty.value) || 0
-    },
-    {
-      name: dom.inputPart3Name.value.trim(),
-      cycleTime: Number(dom.inputPart3Cycle.value) || 0,
-      qty: Number(dom.inputPart3Qty.value) || 0
-    }
-  ];
-
-  const lossesObj = {};
-  LOSS_FIELDS.forEach(field => {
-    const input = document.getElementById(field.key);
-    lossesObj[field.key] = input ? (Number(input.value) || 0) : 0;
-  });
-
-  const rejectedQty = Number(dom.inputRejectedQty.value) || 0;
-
-  return { shiftHours, parts, lossesObj, rejectedQty };
-}
-
-/**
- * Update Live Auto-Calculated OEE Ribbon
- */
-function updateLiveOeeCalculations() {
-  const { shiftHours, parts, lossesObj, rejectedQty } = getFormValues();
-  const oeeData = calculateOEE(shiftHours, parts, lossesObj, rejectedQty);
-
-  dom.liveCalcPlannedTime.textContent = `${oeeData.plannedTimeMins}m`;
-  dom.liveCalcTotalLoss.textContent = `${oeeData.totalLossesMins}m`;
-  dom.liveCalcOperatingTime.textContent = `${oeeData.operatingTimeMins}m`;
-  dom.liveCalcAvailability.textContent = `${oeeData.availabilityRate}%`;
-  dom.liveCalcPerformance.textContent = `${oeeData.performanceRate}%`;
-  dom.liveCalcQuality.textContent = `${oeeData.qualityRate}%`;
-  dom.liveCalcOee.textContent = `${oeeData.oeeRate}%`;
-
-  // Color dynamic feedback
-  if (oeeData.oeeRate >= 85) {
-    dom.liveCalcOee.style.color = 'var(--emerald-400)';
-  } else if (oeeData.oeeRate >= 70) {
-    dom.liveCalcOee.style.color = 'var(--cyan-400)';
-  } else {
-    dom.liveCalcOee.style.color = 'var(--rose-400)';
+function selectMachine(code) {
+  state.dashFilterMachine = code;
+  if (dom.dashFilterMachine) {
+    dom.dashFilterMachine.value = code;
   }
+  renderAnalyticsDashboard();
 }
 
 /**
- * Handle Production Form Submission
- */
-async function handleFormSubmit(e) {
-  e.preventDefault();
-
-  const { shiftHours, parts, lossesObj, rejectedQty } = getFormValues();
-  const oee = calculateOEE(shiftHours, parts, lossesObj, rejectedQty);
-
-  const entryData = {
-    machine_code: state.currentMachine.code,
-    machine_name: state.currentMachine.name,
-    log_date: dom.inputDate.value,
-    shift: dom.inputShift.value,
-    shift_hours: shiftHours,
-    operator_name: dom.inputOperator.value.trim(),
-    
-    // Parts
-    part1_name: parts[0].name,
-    part1_cycle_time: parts[0].cycleTime,
-    part1_qty: parts[0].qty,
-
-    part2_name: parts[1].name,
-    part2_cycle_time: parts[1].cycleTime,
-    part2_qty: parts[1].qty,
-
-    part3_name: parts[2].name,
-    part3_cycle_time: parts[2].cycleTime,
-    part3_qty: parts[2].qty,
-
-    total_qty: oee.totalQty,
-    rejected_qty: oee.rejectedQty,
-    good_qty: oee.goodQty,
-
-    // 13 Losses
-    ...lossesObj,
-    remarks: dom.inputRemarks.value.trim(),
-
-    // OEE Metrics
-    total_losses_mins: oee.totalLossesMins,
-    planned_time_mins: oee.plannedTimeMins,
-    operating_time_mins: oee.operatingTimeMins,
-    ideal_run_time_mins: oee.idealRunTimeMins,
-    availability_rate: oee.availabilityRate,
-    performance_rate: oee.performanceRate,
-    quality_rate: oee.qualityRate,
-    oee_rate: oee.oeeRate
-  };
-
-  const btnSubmit = document.getElementById('btn-submit-entry');
-  btnSubmit.disabled = true;
-  btnSubmit.textContent = 'Saving...';
-
-  try {
-    const res = await saveProductionEntry(entryData);
-    if (res.supabaseSynced) {
-      showToast('Shift Production & Losses synchronized to Supabase Cloud!', 'success');
-    } else {
-      showToast('Shift record saved locally! (Supabase offline mode)', 'success');
-    }
-
-    // Reset all form fields to clean state
-    setDefaultFormValues();
-    updateLiveOeeCalculations();
-
-    // Smoothly transition to Page 3 Analytics Dashboard
-    switchView('view-analytics');
-
-  } catch (err) {
-    console.error('Error saving entry:', err);
-    showToast('Failed to save record.', 'error');
-  } finally {
-    btnSubmit.disabled = false;
-    btnSubmit.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-        <polyline points="7 3 7 8 15 8"></polyline>
-      </svg>
-      Save Record & View Dashboard
-    `;
-  }
-}
-
-/**
- * PAGE 3: Render Executive OEE & Loss Occurrence Dashboard with Chart.js
+ * PAGE 3: Render Comprehensive Periodic OEE & 13-Loss Analytics Dashboard
  */
 async function renderAnalyticsDashboard() {
-  const selectedCode = dom.dashFilterMachine.value === 'ALL' ? null : dom.dashFilterMachine.value;
-  const data = await getDashboardAnalytics(selectedCode);
+  const data = await getPeriodicAnalytics({
+    machineCode: state.dashFilterMachine,
+    periodType: state.periodType,
+    periodValue: state.periodValue
+  });
 
-  // 1. Update 4 Key OEE Metric Tiles
-  dom.dashMetricOee.textContent = data.avgOEE;
-  dom.dashMetricAvail.textContent = data.avgAvailability;
-  dom.dashMetricPerf.textContent = data.avgPerformance;
-  dom.dashMetricQual.textContent = data.avgQuality;
+  state.lastPeriodicData = data;
 
-  dom.dashTotalLosses.textContent = data.totalLossesMins;
-  dom.dashTotalOutput.textContent = data.totalOutput.toLocaleString();
-  dom.dashGoodOutput.textContent = data.totalGood.toLocaleString();
-  dom.dashScrapOutput.textContent = data.totalScrap.toLocaleString();
+  // 1. Sync Horizon Tabs
+  if (dom.periodTabsGroup) {
+    dom.periodTabsGroup.querySelectorAll('.period-tab-btn').forEach(btn => {
+      if (btn.dataset.period === state.periodType) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
 
-  // OEE Rating Badge
-  const oeeNum = Number(data.avgOEE) || 0;
-  const isZeroState = (data.totalOutput === 0 && data.totalLossesMins === 0);
+  // 2. Sync Dynamic Interval Picker Dropdown
+  if (dom.selectPeriodInterval) {
+    dom.selectPeriodInterval.innerHTML = '';
+    let intervalOptions = [];
+    let pickerLabel = 'SELECT SPECIFIC DAY';
+
+    if (state.periodType === 'daily') {
+      pickerLabel = 'SELECT SPECIFIC DAY';
+      intervalOptions = [
+        { key: 'ALL', label: 'All Recorded Days Combined' },
+        ...data.availableDays
+      ];
+    } else if (state.periodType === 'weekly') {
+      pickerLabel = 'SELECT ISO WEEK';
+      intervalOptions = [
+        { key: 'ALL', label: 'All Recorded Weeks Combined' },
+        ...data.availableWeeks
+      ];
+    } else if (state.periodType === 'monthly') {
+      pickerLabel = 'SELECT MONTH';
+      intervalOptions = [
+        { key: 'ALL', label: 'All Recorded Months Combined' },
+        ...data.availableMonths
+      ];
+    } else {
+      pickerLabel = 'OVERALL HORIZON';
+      intervalOptions = [
+        { key: 'ALL', label: 'All-Time Record Overview' }
+      ];
+    }
+
+    if (dom.labelIntervalPicker) {
+      dom.labelIntervalPicker.textContent = pickerLabel;
+    }
+
+    intervalOptions.forEach(opt => {
+      const elOpt = document.createElement('option');
+      elOpt.value = opt.key;
+      elOpt.textContent = opt.label;
+      if (opt.key === data.activePeriodValue) {
+        elOpt.selected = true;
+      }
+      dom.selectPeriodInterval.appendChild(elOpt);
+    });
+
+    if (dom.txtActivePeriod) {
+      dom.txtActivePeriod.textContent = data.activePeriodLabel;
+    }
+  }
+
+  // 3. Sync Machine Roster Quick-Pills
+  if (dom.machineRosterPills) {
+    dom.machineRosterPills.querySelectorAll('.machine-pill-btn').forEach(btn => {
+      if (btn.dataset.machineCode === state.dashFilterMachine) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  if (dom.txtActiveTargetTitle) {
+    dom.txtActiveTargetTitle.textContent = `Currently Inspecting: ${data.selectedMachine.name} • ${data.activePeriodLabel}`;
+  }
+
+  // 4. Update Cockpit Titles and Metrics
+  if (dom.targetKickerName) {
+    dom.targetKickerName.textContent = `${data.selectedMachine.name} • ${data.periodType.toUpperCase()} ANALYSIS`;
+  }
+  if (dom.targetMainTitle) {
+    dom.targetMainTitle.textContent = `${data.selectedMachine.name} (${data.activePeriodLabel})`;
+  }
+  if (dom.targetOeeSub) {
+    dom.targetOeeSub.textContent = `${data.selectedMachine.name} OEE Score`;
+  }
+
+  dom.dashMetricOee.textContent = data.summary.oeeRate;
+  if (dom.dashMetricProductivity) {
+    dom.dashMetricProductivity.textContent = data.summary.productivityRate;
+  }
+  dom.dashMetricAvail.textContent = data.summary.availabilityRate;
+  dom.dashMetricPerf.textContent = data.summary.performanceRate;
+  dom.dashMetricQual.textContent = data.summary.qualityRate;
+
+  dom.dashTotalLosses.textContent = `${data.summary.totalLossesMins.toLocaleString()}m`;
+  dom.dashTotalOutput.textContent = `${data.summary.totalQty.toLocaleString()} pcs`;
+  dom.dashGoodOutput.textContent = `${data.summary.goodQty.toLocaleString()} pcs`;
+  dom.dashScrapOutput.textContent = `${data.summary.rejectedQty.toLocaleString()} pcs`;
+
+  const elOpTimeDisplay = document.getElementById('dash-op-time-display');
+  if (elOpTimeDisplay) elOpTimeDisplay.textContent = `${data.summary.operatingTimeMins.toLocaleString()}m`;
+
+  const elIdealTimeDisplay = document.getElementById('dash-ideal-time-display');
+  if (elIdealTimeDisplay) elIdealTimeDisplay.textContent = `${Math.round(data.summary.idealRunTimeMins).toLocaleString()}m`;
+
+  // OEE Rating Badge & Status
+  const oeeNum = Number(data.summary.oeeRate) || 0;
+  const isZeroState = (data.summary.totalQty === 0 && data.summary.totalLossesMins === 0);
 
   if (isZeroState) {
     dom.oeeRatingBadge.textContent = 'Ready for Shift Data';
@@ -472,28 +456,25 @@ async function renderAnalyticsDashboard() {
     dom.oeeRatingBadge.style.background = 'rgba(244, 63, 94, 0.15)';
   }
 
-  // Update Executive OEE Circular Radial Gauge (SVG)
+  // Radial Ring SVG
   const radialRing = document.getElementById('oee-radial-ring');
   if (radialRing) {
-    const circumference = 351.86; // 2 * pi * 56
+    const circumference = 351.86;
     const pct = isZeroState ? 0 : Math.min(100, Math.max(0, oeeNum));
     const offset = circumference * (1 - pct / 100);
     radialRing.style.strokeDashoffset = offset;
     radialRing.style.stroke = isZeroState ? 'var(--border-subtle)' : (pct >= 85 ? 'var(--emerald-400)' : pct >= 70 ? 'var(--cyan-400)' : 'var(--rose-400)');
   }
 
-  // Update 3 Core Pillar Progress Bars
+  // Pillars Progress Bars
   const barAvail = document.getElementById('bar-avail');
   const barPerf = document.getElementById('bar-perf');
   const barQual = document.getElementById('bar-qual');
-  if (barAvail) barAvail.style.width = isZeroState ? '0%' : `${Math.min(100, Math.max(0, Number(data.avgAvailability)))}%`;
-  if (barPerf) barPerf.style.width = isZeroState ? '0%' : `${Math.min(100, Math.max(0, Number(data.avgPerformance)))}%`;
-  if (barQual) barQual.style.width = isZeroState ? '0%' : `${Math.min(100, Math.max(0, Number(data.avgQuality)))}%`;
+  if (barAvail) barAvail.style.width = isZeroState ? '0%' : `${Math.min(100, Math.max(0, Number(data.summary.availabilityRate)))}%`;
+  if (barPerf) barPerf.style.width = isZeroState ? '0%' : `${Math.min(100, Math.max(0, Number(data.summary.performanceRate)))}%`;
+  if (barQual) barQual.style.width = isZeroState ? '0%' : `${Math.min(100, Math.max(0, Number(data.summary.qualityRate)))}%`;
 
-  // Update Operating Time & Status Indicator
-  const elOpTimeDisplay = document.getElementById('dash-op-time-display');
-  if (elOpTimeDisplay) elOpTimeDisplay.textContent = `${(data.totalOperatingTimeMins || 0).toLocaleString()}m`;
-
+  // Status Indicator
   const elOeeStatus = document.getElementById('oee-status-indicator');
   if (elOeeStatus) {
     if (isZeroState) {
@@ -511,49 +492,356 @@ async function renderAnalyticsDashboard() {
     }
   }
 
-  // Update Deep-Dive Loss Ribbon (Why, How, How Many Times)
+  // Deep-Dive Loss Summary
+  let totalIncidents = 0;
   let topLossName = 'None';
-  let maxLossMins = 0;
   let mostFreqName = 'None';
   let maxFreqCount = 0;
 
   LOSS_FIELDS.forEach(f => {
-    const mins = data.lossBreakdown[f.key] || 0;
-    const count = (data.lossCounts && data.lossCounts[f.key]) || 0;
-    if (mins > maxLossMins) {
-      maxLossMins = mins;
-      topLossName = f.label;
-    }
+    const count = (data.summary.lossCounts && data.summary.lossCounts[f.key]) || 0;
+    totalIncidents += count;
     if (count > maxFreqCount) {
       maxFreqCount = count;
       mostFreqName = f.label;
     }
   });
 
+  if (data.summary.topLoss) {
+    topLossName = `${data.summary.topLoss.label} (${data.summary.topLoss.mins}m)`;
+  }
+
   const elTotalIncidents = document.getElementById('dash-total-incidents');
   const elTopLossName = document.getElementById('dash-top-loss-name');
   const elAvgStoppage = document.getElementById('dash-avg-stoppage');
   const elMostFreq = document.getElementById('dash-most-frequent-loss');
 
-  if (elTotalIncidents) elTotalIncidents.textContent = data.totalLossIncidents || 0;
+  if (elTotalIncidents) elTotalIncidents.textContent = totalIncidents;
   if (elTopLossName) elTopLossName.textContent = topLossName;
   if (elAvgStoppage) {
-    const avg = data.totalLossIncidents > 0 ? (data.totalLossesMins / data.totalLossIncidents).toFixed(1) : 0;
+    const avg = totalIncidents > 0 ? (data.summary.totalLossesMins / totalIncidents).toFixed(1) : 0;
     elAvgStoppage.textContent = `${avg}m`;
   }
   if (elMostFreq) elMostFreq.textContent = mostFreqName;
 
-  // 2. Render Chart 1: Dual Bar/Line Chart for 13 Losses (Duration vs Frequency)
-  renderLossesParetoChart(data.lossBreakdown, data.lossCounts);
+  // 5. Render 11-Machine Comparison Matrix Table
+  renderMachineMatrixTable(data.machineMatrix, data.activePeriodLabel);
 
-  // 3. Render Chart 2: Loss Classification Donut Chart (Why Losses Occur)
-  renderLossClassificationDonut(data.lossBreakdown);
+  // 6. Render Chronological Trend Visualizations
+  renderTrendOeeChart(data.trendPeriods, data.periodType);
+  renderTrendLossesChart(data.trendPeriods, data.periodType);
 
-  // 4. Render Chart 3: OEE % Across All 11 Machines
-  renderMachinesOeeChart(data.machineOeeList);
+  // 7. Render 13 Shopfloor Losses Pareto & Donut
+  renderLossesParetoChart(data.summary.lossBreakdown, data.summary.lossCounts);
+  renderLossClassificationDonut(data.summary.lossBreakdown);
+  renderLossesBreakdownTable(data.detailedLossList, data.selectedMachine.name);
 
-  // 5. Render "Why & How Loss Occurs" Root-Cause Log Table
-  renderRootCauseTable(data.lossOccurrenceList);
+  // 8. Render Machine Chronological History Table
+  renderPeriodHistoryTable(data.periodicHistory, data.selectedMachine.name, data.periodType);
+
+  // 9. Render "Why & How Loss Occurs" Root-Cause Log Table
+  renderRootCauseTable(data.lossIncidents);
+}
+
+/**
+ * Render 11-Machine Performance Comparison Matrix Table
+ * Evaluates each machine separately for the selected Day, Week, or Month
+ */
+function renderMachineMatrixTable(matrix, periodLabel) {
+  if (!dom.machineMatrixTbody) return;
+  if (dom.matrixPeriodSubtitle) {
+    dom.matrixPeriodSubtitle.textContent = periodLabel;
+  }
+  dom.machineMatrixTbody.innerHTML = '';
+
+  matrix.forEach(m => {
+    const tr = document.createElement('tr');
+    if (state.dashFilterMachine === m.code) {
+      tr.classList.add('row-focused');
+    }
+
+    let oeeBadge = `<span class="status-badge-inactive">0.0%</span>`;
+    let statusBadge = `<span class="status-badge-inactive">Inactive</span>`;
+
+    if (m.shiftCount > 0) {
+      if (m.oee >= 85) {
+        oeeBadge = `<span class="status-badge-optimal">${m.oee}%</span>`;
+        statusBadge = `<span class="status-badge-optimal">● Optimal</span>`;
+      } else if (m.oee >= 70) {
+        oeeBadge = `<span class="status-badge-normal">${m.oee}%</span>`;
+        statusBadge = `<span class="status-badge-normal">● Normal</span>`;
+      } else {
+        oeeBadge = `<span class="status-badge-warning">${m.oee}%</span>`;
+        statusBadge = `<span class="status-badge-warning">▲ Attention</span>`;
+      }
+    }
+
+    const topLossDisplay = m.topLoss 
+      ? `<span class="loss-pill-badge">${m.topLoss.label} (${m.topLoss.mins}m)</span>` 
+      : '<span style="color: var(--text-muted); font-size: 0.78rem;">None recorded</span>';
+
+    tr.innerHTML = `
+      <td>
+        <strong style="color: var(--text-primary);">${m.name}</strong>
+        <div style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono);">${m.code}</div>
+      </td>
+      <td><span class="machine-group-tag tag-${m.category.toLowerCase()}">${m.category}</span></td>
+      <td style="font-family: var(--font-mono); font-weight: 700;">${m.shiftCount}</td>
+      <td style="font-family: var(--font-mono);">${m.plannedHours}h</td>
+      <td style="font-family: var(--font-mono); color: var(--emerald-400); font-weight: 700;">${m.operatingHours}h</td>
+      <td style="font-family: var(--font-mono); color: var(--rose-400);">${m.lossHours}h</td>
+      <td style="font-family: var(--font-mono); font-weight: 600;">${m.availability}%</td>
+      <td style="font-family: var(--font-mono); font-weight: 600;">${m.performance}%</td>
+      <td style="font-family: var(--font-mono); font-weight: 600;">${m.quality}%</td>
+      <td>${oeeBadge}</td>
+      <td style="font-family: var(--font-mono); font-weight: 700;">
+        <span class="productivity-badge ${m.productivity > 0 ? 'prod-high' : 'prod-zero'}">${m.productivity} pcs/h</span>
+      </td>
+      <td>
+        <strong style="color: var(--text-primary); font-family: var(--font-mono);">${m.totalOutput}</strong>
+        <span style="font-size: 0.72rem; color: var(--text-muted);">(${m.goodQty} / <span style="color: var(--rose-400);">${m.scrapQty}</span>)</span>
+      </td>
+      <td>${topLossDisplay}</td>
+      <td>${statusBadge}</td>
+      <td>
+        <button type="button" class="btn-inspect-machine" data-code="${m.code}" title="Inspect ${m.name} individually">
+          🔍 Inspect
+        </button>
+      </td>
+    `;
+
+    tr.querySelector('.btn-inspect-machine')?.addEventListener('click', () => {
+      selectMachine(m.code);
+    });
+
+    dom.machineMatrixTbody.appendChild(tr);
+  });
+}
+
+/**
+ * Chart.js: OEE & APQ Progression Over Time (Days, Weeks, Months)
+ */
+function renderTrendOeeChart(trendPeriods, periodType) {
+  const ctx = document.getElementById('chart-trend-oee');
+  if (!ctx || !window.Chart) return;
+
+  if (dom.titleTrendOee) {
+    const targetName = state.dashFilterMachine === 'ALL' ? 'All Machines Combined' : state.dashFilterMachine;
+    dom.titleTrendOee.textContent = `${targetName}: OEE & APQ Progression (${periodType.toUpperCase()})`;
+  }
+  if (dom.badgeTrendPeriodType) {
+    dom.badgeTrendPeriodType.textContent = `${periodType.toUpperCase()} TREND`;
+  }
+
+  if (state.chartTrendOee) {
+    state.chartTrendOee.destroy();
+  }
+
+  const labels = trendPeriods.length > 0 ? trendPeriods.map(p => p.label) : ['No Data'];
+  const oeeData = trendPeriods.map(p => p.oee);
+  const availData = trendPeriods.map(p => p.availability);
+  const perfData = trendPeriods.map(p => p.performance);
+  const qualData = trendPeriods.map(p => p.quality);
+
+  state.chartTrendOee = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'OEE %',
+          data: oeeData,
+          borderColor: '#06b6d4',
+          backgroundColor: 'rgba(6, 182, 212, 0.12)',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 7,
+          pointBackgroundColor: '#ffffff',
+          fill: true,
+          tension: 0.3
+        },
+        {
+          label: 'Availability %',
+          data: availData,
+          borderColor: '#10b981',
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 3,
+          fill: false,
+          tension: 0.3
+        },
+        {
+          label: 'Performance %',
+          data: perfData,
+          borderColor: '#f59e0b',
+          borderWidth: 2,
+          pointRadius: 3,
+          fill: false,
+          tension: 0.3
+        },
+        {
+          label: 'Quality %',
+          data: qualData,
+          borderColor: '#818cf8',
+          borderWidth: 2,
+          pointRadius: 3,
+          fill: false,
+          tension: 0.3
+        },
+        {
+          label: 'Productivity (pcs/h)',
+          data: trendPeriods.map(p => p.productivity),
+          borderColor: '#fbbf24',
+          backgroundColor: 'rgba(251, 191, 36, 0.1)',
+          borderWidth: 2.5,
+          borderDash: [3, 3],
+          pointRadius: 3.5,
+          pointHoverRadius: 6,
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            color: '#94a3b8',
+            font: { size: 11, family: 'Plus Jakarta Sans' },
+            boxWidth: 12
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              if (ctx.dataset.yAxisID === 'y1') {
+                return ` ${ctx.dataset.label}: ${ctx.parsed.y} pcs/h`;
+              }
+              return ` ${ctx.dataset.label}: ${ctx.parsed.y}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#94a3b8',
+            font: { size: 10, family: 'Plus Jakarta Sans' },
+            maxRotation: 45
+          },
+          grid: { color: 'rgba(255, 255, 255, 0.04)' }
+        },
+        y: {
+          min: 0,
+          max: 100,
+          ticks: {
+            color: '#94a3b8',
+            font: { family: 'JetBrains Mono' },
+            callback: (v) => `${v}%`
+          },
+          grid: { color: 'rgba(255, 255, 255, 0.06)' }
+        },
+        y1: {
+          position: 'right',
+          title: {
+            display: true,
+            text: 'Productivity (pcs/h)',
+            color: '#fbbf24',
+            font: { size: 10 }
+          },
+          ticks: {
+            color: '#fbbf24',
+            font: { family: 'JetBrains Mono' }
+          },
+          grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  });
+}
+
+/**
+ * Chart.js: Stacked Downtime Losses Evolution Over Time (Minutes)
+ */
+function renderTrendLossesChart(trendPeriods, periodType) {
+  const ctx = document.getElementById('chart-trend-losses');
+  if (!ctx || !window.Chart) return;
+
+  if (dom.titleTrendLosses) {
+    const targetName = state.dashFilterMachine === 'ALL' ? 'All Machines' : state.dashFilterMachine;
+    dom.titleTrendLosses.textContent = `${targetName}: Downtime Losses Evolution (${periodType.toUpperCase()})`;
+  }
+
+  if (state.chartTrendLosses) {
+    state.chartTrendLosses.destroy();
+  }
+
+  const labels = trendPeriods.length > 0 ? trendPeriods.map(p => p.label) : ['No Data'];
+
+  const bdBreakdown = trendPeriods.map(p => p.lossBreakdown?.loss_breakdown || 0);
+  const bdSetup = trendPeriods.map(p => (p.lossBreakdown?.loss_setup || 0) + (p.lossBreakdown?.loss_startup || 0) + (p.lossBreakdown?.loss_programming || 0));
+  const bdTooling = trendPeriods.map(p => (p.lossBreakdown?.loss_jig_fixture || 0) + (p.lossBreakdown?.loss_speed || 0));
+  const bdQuality = trendPeriods.map(p => (p.lossBreakdown?.loss_quality_insp || 0) + (p.lossBreakdown?.loss_measurement || 0));
+  const bdLogistics = trendPeriods.map(p => (p.lossBreakdown?.loss_no_material || 0) + (p.lossBreakdown?.loss_no_plan || 0) + (p.lossBreakdown?.loss_document || 0));
+  const bdMaint = trendPeriods.map(p => (p.lossBreakdown?.loss_cleaning || 0) + (p.lossBreakdown?.loss_no_operator || 0));
+
+  state.chartTrendLosses = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Breakdown', data: bdBreakdown, backgroundColor: '#f43f5e', borderRadius: 2 },
+        { label: 'Setup & Startup', data: bdSetup, backgroundColor: '#6366f1', borderRadius: 2 },
+        { label: 'Tooling & Speed', data: bdTooling, backgroundColor: '#f59e0b', borderRadius: 2 },
+        { label: 'Quality & Measurement', data: bdQuality, backgroundColor: '#10b981', borderRadius: 2 },
+        { label: 'Logistics & Plan', data: bdLogistics, backgroundColor: '#06b6d4', borderRadius: 2 },
+        { label: 'Maintenance & Misc', data: bdMaint, backgroundColor: '#64748b', borderRadius: 2 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            color: '#94a3b8',
+            font: { size: 10, family: 'Plus Jakarta Sans' },
+            boxWidth: 10
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} mins`
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: {
+            color: '#94a3b8',
+            font: { size: 10, family: 'Plus Jakarta Sans' },
+            maxRotation: 45
+          },
+          grid: { display: false }
+        },
+        y: {
+          stacked: true,
+          ticks: {
+            color: '#94a3b8',
+            font: { family: 'JetBrains Mono' },
+            callback: (v) => `${v}m`
+          },
+          grid: { color: 'rgba(255, 255, 255, 0.06)' }
+        }
+      }
+    }
+  });
 }
 
 /**
@@ -563,7 +851,6 @@ function renderLossesParetoChart(lossBreakdown, lossCounts = {}) {
   const ctx = document.getElementById('chart-losses-pareto');
   if (!ctx || !window.Chart) return;
 
-  // Build sorted array of losses by total duration
   const items = LOSS_FIELDS.map(f => ({
     label: f.label,
     mins: lossBreakdown[f.key] || 0,
@@ -683,7 +970,6 @@ function renderLossClassificationDonut(lossBreakdown) {
   const ctx = document.getElementById('chart-losses-donut');
   if (!ctx || !window.Chart) return;
 
-  // Group into major classifications
   const groups = {
     'Equipment Breakdown': (lossBreakdown.loss_breakdown || 0),
     'Process & Setup': (lossBreakdown.loss_setup || 0) + (lossBreakdown.loss_startup || 0) + (lossBreakdown.loss_programming || 0),
@@ -707,12 +993,12 @@ function renderLossClassificationDonut(lossBreakdown) {
       datasets: [{
         data: values,
         backgroundColor: [
-          '#f43f5e', // Equipment Breakdown
-          '#6366f1', // Process & Setup
-          '#06b6d4', // Logistics
-          '#f59e0b', // Tooling
-          '#10b981', // Quality
-          '#64748b'  // Maintenance
+          '#f43f5e',
+          '#6366f1',
+          '#06b6d4',
+          '#f59e0b',
+          '#10b981',
+          '#64748b'
         ],
         borderWidth: 2,
         borderColor: '#111a2e'
@@ -738,68 +1024,87 @@ function renderLossClassificationDonut(lossBreakdown) {
 }
 
 /**
- * Chart.js: OEE Comparison Across All 11 Machines
+ * Render 13 Shopfloor Downtime Losses Detailed Table
  */
-function renderMachinesOeeChart(machineOeeList) {
-  const ctx = document.getElementById('chart-machines-oee');
-  if (!ctx || !window.Chart) return;
+function renderLossesBreakdownTable(detailedLossList, targetName) {
+  if (!dom.lossesBreakdownTbody) return;
+  if (dom.titleLossesTable) {
+    dom.titleLossesTable.textContent = `13 Shopfloor Downtime Losses Distribution: ${targetName}`;
+  }
+  dom.lossesBreakdownTbody.innerHTML = '';
 
-  const labels = machineOeeList.map(m => m.name);
-  const oeeValues = machineOeeList.map(m => m.oee);
-
-  // Dynamic colors: emerald for >=85, cyan for >=70, rose for <70
-  const bgColors = oeeValues.map(v => {
-    if (v >= 85) return 'rgba(16, 185, 129, 0.7)';
-    if (v >= 70) return 'rgba(6, 182, 212, 0.7)';
-    return 'rgba(244, 63, 94, 0.7)';
-  });
-
-  if (state.chartMachinesOee) {
-    state.chartMachinesOee.destroy();
+  if (!detailedLossList || detailedLossList.length === 0) {
+    dom.lossesBreakdownTbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">No downtime losses recorded for this period.</td></tr>';
+    return;
   }
 
-  state.chartMachinesOee = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'OEE %',
-        data: oeeValues,
-        backgroundColor: bgColors,
-        borderRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => ` OEE: ${ctx.parsed.y}%`
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: '#94a3b8',
-            font: { size: 11, family: 'Plus Jakarta Sans' }
-          },
-          grid: { display: false }
-        },
-        y: {
-          min: 0,
-          max: 100,
-          ticks: {
-            color: '#94a3b8',
-            font: { family: 'JetBrains Mono' },
-            callback: (v) => `${v}%`
-          },
-          grid: { color: 'rgba(255, 255, 255, 0.06)' }
-        }
-      }
-    }
+  detailedLossList.forEach((loss, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-family: var(--font-mono); color: var(--text-muted);">${index + 1}</td>
+      <td>
+        <strong style="color: var(--text-primary);">${loss.label}</strong>
+      </td>
+      <td><span class="why-category-badge">${loss.category}</span></td>
+      <td style="font-family: var(--font-mono); font-weight: 700; color: ${loss.mins > 0 ? 'var(--rose-400)' : 'var(--text-muted)'};">${loss.mins}m</td>
+      <td style="font-family: var(--font-mono);">${loss.hours}h</td>
+      <td style="font-family: var(--font-mono);">${loss.count}</td>
+      <td>
+        <div class="loss-impact-bar-wrap">
+          <div class="loss-impact-bar-fill" style="width: ${loss.pctOfLoss}%;"></div>
+        </div>
+        <span style="font-family: var(--font-mono); font-weight: 600;">${loss.pctOfLoss}%</span>
+      </td>
+      <td style="font-family: var(--font-mono); color: ${loss.impactOnAvail > 0 ? 'var(--amber-400)' : 'var(--text-muted)'};">-${loss.impactOnAvail}%</td>
+    `;
+    dom.lossesBreakdownTbody.appendChild(tr);
+  });
+}
+
+/**
+ * Render Machine Chronological Period History Table
+ */
+function renderPeriodHistoryTable(periodicHistory, targetName, periodType) {
+  if (!dom.periodHistoryTbody) return;
+  if (dom.titlePeriodHistory) {
+    dom.titlePeriodHistory.textContent = `Chronological ${periodType.toUpperCase()} History: ${targetName}`;
+  }
+  if (dom.badgeHistoryHorizon) {
+    dom.badgeHistoryHorizon.textContent = `${periodType.toUpperCase()} ARCHIVE`;
+  }
+  dom.periodHistoryTbody.innerHTML = '';
+
+  if (!periodicHistory || periodicHistory.length === 0) {
+    dom.periodHistoryTbody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding: 24px; color: var(--text-muted);">No historical shift records logged yet for this selection.</td></tr>';
+    return;
+  }
+
+  periodicHistory.forEach(h => {
+    const tr = document.createElement('tr');
+    let oeeBadge = `<span class="status-badge-inactive">0.0%</span>`;
+    if (h.oee >= 85) oeeBadge = `<span class="status-badge-optimal">${h.oee}%</span>`;
+    else if (h.oee >= 70) oeeBadge = `<span class="status-badge-normal">${h.oee}%</span>`;
+    else if (h.oee > 0) oeeBadge = `<span class="status-badge-warning">${h.oee}%</span>`;
+
+    const topLossDisplay = h.topLoss ? `${h.topLoss.label} (${h.topLoss.mins}m)` : 'None';
+
+    tr.innerHTML = `
+      <td style="font-family: var(--font-mono); font-weight: 700; color: var(--cyan-400);">${h.label}</td>
+      <td style="font-family: var(--font-mono); font-weight: 700;">${h.shiftCount}</td>
+      <td style="font-family: var(--font-mono);">${h.plannedMins}m</td>
+      <td style="font-family: var(--font-mono); color: var(--emerald-400); font-weight: 700;">${h.operatingMins}m</td>
+      <td style="font-family: var(--font-mono); color: var(--rose-400);">${h.lossMins}m</td>
+      <td style="font-family: var(--font-mono);">${h.availability}%</td>
+      <td style="font-family: var(--font-mono);">${h.performance}%</td>
+      <td style="font-family: var(--font-mono);">${h.quality}%</td>
+      <td>${oeeBadge}</td>
+      <td style="font-family: var(--font-mono); font-weight: 700; color: var(--amber-400);">${h.productivity} pcs/h</td>
+      <td style="font-family: var(--font-mono); font-weight: 700;">${h.totalOutput}</td>
+      <td style="font-family: var(--font-mono); color: var(--emerald-400);">${h.goodQty}</td>
+      <td style="font-family: var(--font-mono); color: var(--rose-400);">${h.scrapQty}</td>
+      <td style="font-size: 0.8rem; color: var(--text-secondary);">${topLossDisplay}</td>
+    `;
+    dom.periodHistoryTbody.appendChild(tr);
   });
 }
 
@@ -814,8 +1119,8 @@ function renderRootCauseTable(occurrences) {
       <tr>
         <td colspan="8" style="text-align:center; padding: 36px 20px; color: var(--text-secondary);">
           <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
-            <span style="font-size: 1.05rem; font-weight: 700; color: var(--cyan-400);">Ready for New Production Records</span>
-            <span style="font-size: 0.85rem; color: var(--text-muted);">No production logs recorded yet. Choose any of the 11 machines to enter shift data, or connect Supabase to stream cloud records.</span>
+            <span style="font-size: 1.05rem; font-weight: 700; color: var(--cyan-400);">No Stoppages Reported for this Horizon</span>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">No downtime incidents or remarks recorded for this specific interval.</span>
           </div>
         </td>
       </tr>
@@ -875,10 +1180,102 @@ function setupEventListeners() {
     openMachineFillup(e.target.value);
   });
 
-  // Page 3 Machine Filter
-  dom.dashFilterMachine.addEventListener('change', () => {
-    renderAnalyticsDashboard();
-  });
+  // Page 3 Machine Filter (Dropdown sync)
+  if (dom.dashFilterMachine) {
+    dom.dashFilterMachine.addEventListener('change', () => {
+      selectMachine(dom.dashFilterMachine.value);
+    });
+  }
+
+  // Periodic Horizon Buttons (Daily, Weekly, Monthly, Overall)
+  if (dom.periodTabsGroup) {
+    dom.periodTabsGroup.addEventListener('click', (e) => {
+      const btn = e.target.closest('.period-tab-btn');
+      if (!btn) return;
+      state.periodType = btn.dataset.period;
+      state.periodValue = 'LATEST';
+      renderAnalyticsDashboard();
+    });
+  }
+
+  // Dynamic Period Interval Dropdown
+  if (dom.selectPeriodInterval) {
+    dom.selectPeriodInterval.addEventListener('change', (e) => {
+      state.periodValue = e.target.value;
+      renderAnalyticsDashboard();
+    });
+  }
+
+  // Prev / Next Period Stepper Buttons
+  if (dom.btnPeriodPrev) {
+    dom.btnPeriodPrev.addEventListener('click', () => {
+      if (!dom.selectPeriodInterval) return;
+      const idx = dom.selectPeriodInterval.selectedIndex;
+      if (idx < dom.selectPeriodInterval.options.length - 1) {
+        dom.selectPeriodInterval.selectedIndex = idx + 1;
+        state.periodValue = dom.selectPeriodInterval.value;
+        renderAnalyticsDashboard();
+      }
+    });
+  }
+
+  if (dom.btnPeriodNext) {
+    dom.btnPeriodNext.addEventListener('click', () => {
+      if (!dom.selectPeriodInterval) return;
+      const idx = dom.selectPeriodInterval.selectedIndex;
+      if (idx > 0) {
+        dom.selectPeriodInterval.selectedIndex = idx - 1;
+        state.periodValue = dom.selectPeriodInterval.value;
+        renderAnalyticsDashboard();
+      }
+    });
+  }
+
+  // Machine Roster Quick-Pills
+  if (dom.machineRosterPills) {
+    dom.machineRosterPills.addEventListener('click', (e) => {
+      const btn = e.target.closest('.machine-pill-btn');
+      if (!btn) return;
+      const code = btn.dataset.machineCode;
+      selectMachine(code);
+    });
+  }
+
+  // Export Period CSV Button
+  if (dom.btnExportPeriodCsv) {
+    dom.btnExportPeriodCsv.addEventListener('click', () => {
+      if (state.lastPeriodicData) {
+        exportPeriodicReportToCSV(state.lastPeriodicData, `${state.dashFilterMachine}_Periodic_Analysis`);
+      } else {
+        showToast('No periodic report available to export.', 'error');
+      }
+    });
+  }
+
+  // Load Sample Data (3 Weeks Multi-Machine Shifts)
+  if (dom.btnSeedSample) {
+    dom.btnSeedSample.addEventListener('click', async () => {
+      dom.btnSeedSample.disabled = true;
+      dom.btnSeedSample.textContent = 'Populating...';
+      try {
+        await seedDemoShiftData();
+        setDefaultFormValues();
+        updateLiveOeeCalculations();
+        await renderAnalyticsDashboard();
+        showToast('⚡ 3 Weeks of realistic shift records populated across 11 machines!', 'success');
+      } catch (err) {
+        showToast('Failed to populate sample records.', 'error');
+      } finally {
+        dom.btnSeedSample.disabled = false;
+        dom.btnSeedSample.innerHTML = `
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          ⚡ Load Sample Data
+        `;
+      }
+    });
+  }
 
   // Live OEE Calculation triggers on Page 2
   const calcInputs = [
@@ -934,7 +1331,6 @@ function setupEventListeners() {
     if (targetInput) {
       const currentVal = parseInt(targetInput.value, 10) || 0;
       targetInput.value = Math.max(0, currentVal + addMinutes);
-      // Haptic feedback for Android devices
       if ('vibrate' in navigator) {
         try { navigator.vibrate(30); } catch (_) {}
       }
@@ -944,13 +1340,10 @@ function setupEventListeners() {
 
   // Supabase Settings Modal
   dom.btnOpenDbSettings.addEventListener('click', () => {
-    const connected = isConnectedToSupabase();
-    dom.supabaseTestResult.style.display = 'block';
-    dom.supabaseTestResult.style.background = connected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)';
-    dom.supabaseTestResult.style.color = connected ? 'var(--emerald-400)' : 'var(--rose-400)';
-    dom.supabaseTestResult.textContent = connected
-      ? 'Supabase is connected through Vercel environment variables.'
-      : 'Supabase is not configured. Set VERCEL_SUPABASE_URL and VERCEL_SUPABASE_ANON_KEY in Vercel or .env.local, then run vercel dev.';
+    const cfg = getSupabaseConfig();
+    dom.cfgSupabaseUrl.value = cfg.url || '';
+    dom.cfgSupabaseKey.value = cfg.key || '';
+    dom.supabaseTestResult.style.display = 'none';
     dom.modalSupabase.classList.remove('hidden');
   });
 
@@ -958,16 +1351,75 @@ function setupEventListeners() {
     dom.modalSupabase.classList.add('hidden');
   });
 
-  if (dom.btnCloseSupabaseModal) {
-    dom.btnCloseSupabaseModal.addEventListener('click', () => {
+  dom.btnTestSupabase.addEventListener('click', async () => {
+    const url = dom.cfgSupabaseUrl.value.trim();
+    const key = dom.cfgSupabaseKey.value.trim();
+    if (!url || !key) {
+      dom.supabaseTestResult.style.display = 'block';
+      dom.supabaseTestResult.style.background = 'rgba(244, 63, 94, 0.15)';
+      dom.supabaseTestResult.style.color = 'var(--rose-400)';
+      dom.supabaseTestResult.textContent = 'Please provide both Project URL and Public Anon Key.';
+      return;
+    }
+
+    dom.btnTestSupabase.disabled = true;
+    dom.btnTestSupabase.textContent = 'Testing...';
+
+    const test = await testSupabaseConnection(url, key);
+    dom.btnTestSupabase.disabled = false;
+    dom.btnTestSupabase.textContent = 'Test Connection';
+
+    dom.supabaseTestResult.style.display = 'block';
+    if (test.success) {
+      dom.supabaseTestResult.style.background = 'rgba(16, 185, 129, 0.15)';
+      dom.supabaseTestResult.style.color = 'var(--emerald-400)';
+      dom.supabaseTestResult.textContent = test.message;
+    } else {
+      dom.supabaseTestResult.style.background = 'rgba(244, 63, 94, 0.15)';
+      dom.supabaseTestResult.style.color = 'var(--rose-400)';
+      dom.supabaseTestResult.textContent = test.message;
+    }
+  });
+
+  dom.btnSaveSupabase.addEventListener('click', async () => {
+    const url = dom.cfgSupabaseUrl.value.trim();
+    const key = dom.cfgSupabaseKey.value.trim();
+    saveSupabaseConfig(url, key);
+    await initStorage();
+    updateSupabaseStatusIndicator();
+    dom.modalSupabase.classList.add('hidden');
+    const isConn = isConnectedToSupabase();
+    if (isConn) {
+      showToast('⚡ Supabase Database successfully connected & active!', 'success');
+    } else {
+      showToast('Supabase settings saved.', 'info');
+    }
+    if (state.currentView === 'view-analytics') {
+      await renderAnalyticsDashboard();
+    }
+  });
+
+  // Disconnect Supabase Cloud
+  if (dom.btnDisconnectSupabase) {
+    dom.btnDisconnectSupabase.addEventListener('click', async () => {
+      saveSupabaseConfig('', '');
+      await initStorage();
+      updateSupabaseStatusIndicator();
+      dom.cfgSupabaseUrl.value = '';
+      dom.cfgSupabaseKey.value = '';
+      dom.supabaseTestResult.style.display = 'none';
       dom.modalSupabase.classList.add('hidden');
+      showToast('Supabase disconnected. Switched to local storage mode.', 'info');
+      if (state.currentView === 'view-analytics') {
+        await renderAnalyticsDashboard();
+      }
     });
   }
 
   // Clear Production Data Button
   if (dom.btnClearData) {
     dom.btnClearData.addEventListener('click', async () => {
-      const ok = confirm('⚠️ Reset This Browser Session?\n\nThis clears only the local cached records in this browser. Shared cloud data is preserved for other users.');
+      const ok = confirm('⚠️ Clear All Production Data?\n\nThis will wipe all existing shift production records and loss occurrences so you can enter fresh data.');
       if (!ok) return;
 
       await clearAllProductionEntries();
@@ -976,7 +1428,246 @@ function setupEventListeners() {
       if (state.currentView === 'view-analytics') {
         await renderAnalyticsDashboard();
       }
-      showToast('Local cache cleared. Shared cloud records were not changed.', 'info');
+      showToast('All production records have been cleared! Ready for new entries.', 'info');
     });
+  }
+}
+
+/**
+ * Switch to Page 2 (Production Fillup) for a specific machine
+ */
+function openMachineFillup(machineCode) {
+  const machine = MACHINES.find(m => m.code === machineCode) || MACHINES[0];
+  state.currentMachine = machine;
+
+  if (dom.activeMachineName) {
+    dom.activeMachineName.textContent = machine.name;
+  }
+  if (dom.activeMachineType) {
+    dom.activeMachineType.textContent = `${machine.category} Center`;
+  }
+  if (dom.selectQuickMachine) {
+    dom.selectQuickMachine.value = machine.code;
+  }
+
+  setDefaultFormValues();
+  updateLiveOeeCalculations();
+  switchView('view-fillup');
+}
+
+/**
+ * Set default values for Page 2 production form
+ */
+function setDefaultFormValues() {
+  const today = new Date().toISOString().split('T')[0];
+  if (dom.inputDate) dom.inputDate.value = today;
+  if (dom.inputShift) dom.inputShift.value = getCurrentShift();
+  if (dom.inputShiftHours) dom.inputShiftHours.value = '8.5';
+  if (dom.inputOperator && !dom.inputOperator.value) dom.inputOperator.value = 'Operator 1';
+
+  // Part 1 defaults
+  if (dom.inputPart1Name) dom.inputPart1Name.value = 'Pinion-Shaft-45';
+  if (dom.inputPart1Cycle) dom.inputPart1Cycle.value = '2.2';
+  if (dom.inputPart1Qty) dom.inputPart1Qty.value = '120';
+
+  // Part 2 & 3 optional
+  if (dom.inputPart2Name) dom.inputPart2Name.value = '';
+  if (dom.inputPart2Cycle) dom.inputPart2Cycle.value = '0';
+  if (dom.inputPart2Qty) dom.inputPart2Qty.value = '0';
+
+  if (dom.inputPart3Name) dom.inputPart3Name.value = '';
+  if (dom.inputPart3Cycle) dom.inputPart3Cycle.value = '0';
+  if (dom.inputPart3Qty) dom.inputPart3Qty.value = '0';
+
+  if (dom.inputRejectedQty) dom.inputRejectedQty.value = '2';
+
+  // Reset 13 losses
+  LOSS_FIELDS.forEach(f => {
+    const el = document.getElementById(f.key);
+    if (el) el.value = '0';
+  });
+
+  if (dom.inputRemarks) dom.inputRemarks.value = '';
+}
+
+/**
+ * Live Auto-Calculated Ribbon on Page 2 (Calculates OEE, Pillars, & Productivity)
+ */
+function updateLiveOeeCalculations() {
+  const shiftHours = parseFloat(dom.inputShiftHours ? dom.inputShiftHours.value : 8.5) || 8.5;
+
+  const parts = [
+    {
+      name: dom.inputPart1Name ? dom.inputPart1Name.value.trim() : '',
+      cycleTime: parseFloat(dom.inputPart1Cycle ? dom.inputPart1Cycle.value : 0) || 0,
+      qty: parseInt(dom.inputPart1Qty ? dom.inputPart1Qty.value : 0, 10) || 0
+    },
+    {
+      name: dom.inputPart2Name ? dom.inputPart2Name.value.trim() : '',
+      cycleTime: parseFloat(dom.inputPart2Cycle ? dom.inputPart2Cycle.value : 0) || 0,
+      qty: parseInt(dom.inputPart2Qty ? dom.inputPart2Qty.value : 0, 10) || 0
+    },
+    {
+      name: dom.inputPart3Name ? dom.inputPart3Name.value.trim() : '',
+      cycleTime: parseFloat(dom.inputPart3Cycle ? dom.inputPart3Cycle.value : 0) || 0,
+      qty: parseInt(dom.inputPart3Qty ? dom.inputPart3Qty.value : 0, 10) || 0
+    }
+  ];
+
+  const lossesObj = {};
+  LOSS_FIELDS.forEach(f => {
+    const el = document.getElementById(f.key);
+    lossesObj[f.key] = el ? (parseFloat(el.value) || 0) : 0;
+  });
+
+  const rejectedQty = parseInt(dom.inputRejectedQty ? dom.inputRejectedQty.value : 0, 10) || 0;
+
+  const oeeResult = calculateOEE(shiftHours, parts, lossesObj, rejectedQty);
+
+  if (dom.liveCalcPlannedTime) dom.liveCalcPlannedTime.textContent = `${oeeResult.plannedTimeMins}m`;
+  if (dom.liveCalcTotalLoss) dom.liveCalcTotalLoss.textContent = `${oeeResult.totalLossesMins}m`;
+  if (dom.liveCalcOperatingTime) dom.liveCalcOperatingTime.textContent = `${oeeResult.operatingTimeMins}m`;
+  if (dom.liveCalcAvailability) dom.liveCalcAvailability.textContent = `${oeeResult.availabilityRate}%`;
+  if (dom.liveCalcPerformance) dom.liveCalcPerformance.textContent = `${oeeResult.performanceRate}%`;
+  if (dom.liveCalcQuality) dom.liveCalcQuality.textContent = `${oeeResult.qualityRate}%`;
+  if (dom.liveCalcOee) {
+    dom.liveCalcOee.textContent = `${oeeResult.oeeRate}%`;
+    if (oeeResult.oeeRate >= 85) {
+      dom.liveCalcOee.style.color = 'var(--emerald-400)';
+    } else if (oeeResult.oeeRate >= 70) {
+      dom.liveCalcOee.style.color = 'var(--cyan-400)';
+    } else {
+      dom.liveCalcOee.style.color = 'var(--rose-400)';
+    }
+  }
+
+  if (dom.liveCalcProductivity) {
+    dom.liveCalcProductivity.textContent = `${oeeResult.productivityRate} pcs/h`;
+    if (oeeResult.productivityRate > 0) {
+      dom.liveCalcProductivity.style.color = 'var(--amber-400)';
+    } else {
+      dom.liveCalcProductivity.style.color = 'var(--text-muted)';
+    }
+  }
+
+  return oeeResult;
+}
+
+/**
+ * Handle Production Detail Form Submission
+ */
+async function handleFormSubmit(e) {
+  e.preventDefault();
+
+  const shiftHours = parseFloat(dom.inputShiftHours.value) || 8.5;
+  const operatorName = dom.inputOperator.value.trim() || 'Operator';
+  const logDate = dom.inputDate.value || new Date().toISOString().split('T')[0];
+  const shift = dom.inputShift.value || 'Shift A';
+
+  const parts = [
+    {
+      name: dom.inputPart1Name.value.trim(),
+      cycleTime: parseFloat(dom.inputPart1Cycle.value) || 0,
+      qty: parseInt(dom.inputPart1Qty.value, 10) || 0
+    },
+    {
+      name: dom.inputPart2Name.value.trim(),
+      cycleTime: parseFloat(dom.inputPart2Cycle.value) || 0,
+      qty: parseInt(dom.inputPart2Qty.value, 10) || 0
+    },
+    {
+      name: dom.inputPart3Name.value.trim(),
+      cycleTime: parseFloat(dom.inputPart3Cycle.value) || 0,
+      qty: parseInt(dom.inputPart3Qty.value, 10) || 0
+    }
+  ];
+
+  const lossesObj = {};
+  let primaryLossReason = 'None';
+  let maxLossVal = 0;
+
+  LOSS_FIELDS.forEach(f => {
+    const el = document.getElementById(f.key);
+    const val = el ? (parseFloat(el.value) || 0) : 0;
+    lossesObj[f.key] = val;
+    if (val > maxLossVal) {
+      maxLossVal = val;
+      primaryLossReason = f.label;
+    }
+  });
+
+  const rejectedQty = parseInt(dom.inputRejectedQty.value, 10) || 0;
+  const oeeResult = calculateOEE(shiftHours, parts, lossesObj, rejectedQty);
+
+  const entryRecord = {
+    machine_code: state.currentMachine.code,
+    machine_name: state.currentMachine.name,
+    log_date: logDate,
+    shift,
+    shift_hours: shiftHours,
+    operator_name: operatorName,
+
+    part1_name: parts[0].name,
+    part1_cycle_time: parts[0].cycleTime,
+    part1_qty: parts[0].qty,
+
+    part2_name: parts[1].name,
+    part2_cycle_time: parts[1].cycleTime,
+    part2_qty: parts[1].qty,
+
+    part3_name: parts[2].name,
+    part3_cycle_time: parts[2].cycleTime,
+    part3_qty: parts[2].qty,
+
+    total_qty: oeeResult.totalQty,
+    rejected_qty: oeeResult.rejectedQty,
+    good_qty: oeeResult.goodQty,
+
+    ...lossesObj,
+    remarks: dom.inputRemarks.value.trim() || `${primaryLossReason} recorded`,
+
+    total_losses_mins: oeeResult.totalLossesMins,
+    planned_time_mins: oeeResult.plannedTimeMins,
+    operating_time_mins: oeeResult.operatingTimeMins,
+    ideal_run_time_mins: oeeResult.idealRunTimeMins,
+
+    availability_rate: oeeResult.availabilityRate,
+    performance_rate: oeeResult.performanceRate,
+    quality_rate: oeeResult.qualityRate,
+    oee_rate: oeeResult.oeeRate,
+    productivity_rate: oeeResult.productivityRate
+  };
+
+  const btnSubmit = document.getElementById('btn-submit-entry');
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = 'Saving Record...';
+  }
+
+  try {
+    const res = await saveProductionEntry(entryRecord);
+    const syncMsg = res.supabaseSynced ? ' (Synced to Cloud)' : ' (Saved Locally)';
+    showToast(`✓ Shift logged for ${state.currentMachine.name}! OEE: ${entryRecord.oee_rate}% • Productivity: ${entryRecord.productivity_rate} pcs/h${syncMsg}`, 'success');
+
+    setDefaultFormValues();
+    updateLiveOeeCalculations();
+
+    // Navigate to Analytics & focus this machine
+    selectMachine(state.currentMachine.code);
+    switchView('view-analytics');
+  } catch (err) {
+    showToast(`Error saving record: ${err.message}`, 'error');
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        Save Record & View Dashboard
+      `;
+    }
   }
 }
