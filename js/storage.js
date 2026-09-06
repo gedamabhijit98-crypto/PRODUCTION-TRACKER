@@ -520,3 +520,70 @@ export function calculateTimeWeightedOEE(logs = []) {
     lossOccurrenceList: lossOccurrences.slice(0, 25)
   };
 }
+export function calculateTimeWeightedOEE(logs = []) {
+  if (!logs || logs.length === 0) {
+    return {
+      avgOEE: '0.0',
+      avgAvailability: '0.0',
+      avgPerformance: '0.0',
+      avgQuality: '0.0',
+      totalPlannedTimeMins: 0,
+      totalOperatingTimeMins: 0,
+      totalLossesMins: 0,
+      totalOutput: 0,
+      totalGood: 0,
+      totalScrap: 0
+    };
+  }
+
+  let sumOee = 0;
+  let sumAvail = 0;
+  let sumPerf = 0;
+  let sumQual = 0;
+  let totalPlanned = 0;
+  let totalOp = 0;
+  let totalDowntime = 0;
+  let totalOut = 0;
+  let totalGoodQty = 0;
+  let totalScrapQty = 0;
+
+  logs.forEach(entry => {
+    const planned = Number(entry.plannedTimeMinutes || entry.planned_time || 480);
+    const down = Number(entry.downtimeMinutes || entry.downtime || 0);
+    const op = Math.max(0, planned - down);
+    const out = Number(entry.totalProduced || entry.total_output || 0);
+    const scrap = Number(entry.defectiveUnits || entry.scrap_qty || 0);
+    const good = Math.max(0, out - scrap);
+
+    totalPlanned += planned;
+    totalOp += op;
+    totalDowntime += down;
+    totalOut += out;
+    totalGoodQty += good;
+    totalScrapQty += scrap;
+
+    const oeeData = typeof calculateOEE === 'function' 
+      ? calculateOEE(entry) 
+      : { availability: 100, performance: 100, quality: 100, oee: 100 };
+
+    sumOee += Number(oeeData.oee || 0);
+    sumAvail += Number(oeeData.availability || 0);
+    sumPerf += Number(oeeData.performance || 0);
+    sumQual += Number(oeeData.quality || 0);
+  });
+
+  const count = logs.length;
+
+  return {
+    avgOEE: (sumOee / count).toFixed(1),
+    avgAvailability: (sumAvail / count).toFixed(1),
+    avgPerformance: (sumPerf / count).toFixed(1),
+    avgQuality: (sumQual / count).toFixed(1),
+    totalPlannedTimeMins: totalPlanned,
+    totalOperatingTimeMins: totalOp,
+    totalLossesMins: totalDowntime,
+    totalOutput: totalOut,
+    totalGood: totalGoodQty,
+    totalScrap: totalScrapQty
+  };
+}
