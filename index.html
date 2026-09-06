@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Shopfloor Production & OEE Loss Tracker | 11 Machines</title>
-  <meta name="description" content="Industrial Production & OEE Downtime Loss Tracking System with Multi-Part Production and 13-Loss Analysis across 11 CNC, VMC, and HMC machines." />
-  
+  <meta name="description"
+    content="Industrial Production & OEE Downtime Loss Tracking System with Multi-Part Production and 13-Loss Analysis across 11 CNC, VMC, and HMC machines." />
+
   <!-- Mobile & Android PWA Enhancements -->
   <meta name="theme-color" content="#030712" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -13,7 +16,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="assets/icon-192.png" />
-  
+
   <!-- Design System CSS -->
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -24,6 +27,7 @@
   <!-- Chart.js for High-End Animated Visuals -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
   <!-- Top Navigation Bar -->
@@ -31,7 +35,8 @@
     <div class="brand-section">
       <div class="brand-logo" title="Shopfloor OEE Precision Tracker">
         <svg viewBox="0 0 24 24">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round"
+            stroke-linejoin="round" />
         </svg>
       </div>
       <div class="brand-info">
@@ -70,7 +75,8 @@
 
     <!-- Header Actions & Clocks -->
     <div class="nav-actions">
-      <button class="btn btn-secondary" id="btn-open-mobile-qr" title="Scan QR Code to open on Android Phone" style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(6, 182, 212, 0.4); color: var(--cyan-400);">
+      <button class="btn btn-secondary" id="btn-open-mobile-qr" title="Scan QR Code to open on Android Phone"
+        style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(6, 182, 212, 0.4); color: var(--cyan-400);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
           <line x1="12" y1="18" x2="12.01" y2="18"></line>
@@ -96,7 +102,8 @@
         <span id="db-status-text">Supabase: Offline</span>
       </button>
 
-      <button class="btn btn-secondary" id="btn-clear-data" title="Clear entered production logs to start clean" style="padding: 7px 14px; font-size: 0.8rem; border-color: rgba(244, 63, 94, 0.35); color: var(--rose-400);">
+      <button class="btn btn-secondary" id="btn-clear-data" title="Clear entered production logs to start clean"
+        style="padding: 7px 14px; font-size: 0.8rem; border-color: rgba(244, 63, 94, 0.35); color: var(--rose-400);">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="3 6 5 6 21 6"></polyline>
           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -104,7 +111,8 @@
         Clear Data
       </button>
 
-      <button class="btn btn-secondary" id="btn-global-export" title="Export Production & Loss Records as CSV" style="padding: 7px 14px; font-size: 0.8rem;">
+      <button class="btn btn-secondary" id="btn-global-export" title="Export Production & Loss Records as CSV"
+        style="padding: 7px 14px; font-size: 0.8rem;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
@@ -233,11 +241,13 @@
                 </div>
                 <div class="form-group">
                   <label for="input-part1-cycle">Cycle Time (Mins) *</label>
-                  <input type="number" step="0.1" min="0" inputmode="decimal" id="input-part1-cycle" placeholder="0.0" value="0" required />
+                  <input type="number" step="0.1" min="0" inputmode="decimal" id="input-part1-cycle" placeholder="0.0"
+                    value="0" required />
                 </div>
                 <div class="form-group">
                   <label for="input-part1-qty">Part 1 Quantity *</label>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-part1-qty" placeholder="0" value="0" required />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-part1-qty" placeholder="0"
+                    value="0" required />
                 </div>
               </div>
 
@@ -250,11 +260,13 @@
                 </div>
                 <div class="form-group">
                   <label for="input-part2-cycle">Cycle Time (Mins)</label>
-                  <input type="number" step="0.1" min="0" inputmode="decimal" id="input-part2-cycle" placeholder="0" value="0" />
+                  <input type="number" step="0.1" min="0" inputmode="decimal" id="input-part2-cycle" placeholder="0"
+                    value="0" />
                 </div>
                 <div class="form-group">
                   <label for="input-part2-qty">Part 2 Quantity</label>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-part2-qty" placeholder="0" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-part2-qty" placeholder="0"
+                    value="0" />
                 </div>
               </div>
 
@@ -267,11 +279,13 @@
                 </div>
                 <div class="form-group">
                   <label for="input-part3-cycle">Cycle Time (Mins)</label>
-                  <input type="number" step="0.1" min="0" inputmode="decimal" id="input-part3-cycle" placeholder="0" value="0" />
+                  <input type="number" step="0.1" min="0" inputmode="decimal" id="input-part3-cycle" placeholder="0"
+                    value="0" />
                 </div>
                 <div class="form-group">
                   <label for="input-part3-qty">Part 3 Quantity</label>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-part3-qty" placeholder="0" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-part3-qty" placeholder="0"
+                    value="0" />
                 </div>
               </div>
             </div>
@@ -316,7 +330,8 @@
                     <button type="button" class="btn-loss-chip" data-target="loss_breakdown" data-add="5">+5m</button>
                     <button type="button" class="btn-loss-chip" data-target="loss_breakdown" data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_breakdown" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_breakdown" value="0" />
                 </div>
               </div>
 
@@ -331,7 +346,8 @@
                     <button type="button" class="btn-loss-chip" data-target="loss_no_plan" data-add="5">+5m</button>
                     <button type="button" class="btn-loss-chip" data-target="loss_no_plan" data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_no_plan" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_no_plan" value="0" />
                 </div>
               </div>
 
@@ -344,9 +360,11 @@
                 <div class="loss-control-group">
                   <div class="quick-chips">
                     <button type="button" class="btn-loss-chip" data-target="loss_no_material" data-add="5">+5m</button>
-                    <button type="button" class="btn-loss-chip" data-target="loss_no_material" data-add="15">+15m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_no_material"
+                      data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_no_material" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_no_material" value="0" />
                 </div>
               </div>
 
@@ -359,9 +377,11 @@
                 <div class="loss-control-group">
                   <div class="quick-chips">
                     <button type="button" class="btn-loss-chip" data-target="loss_no_operator" data-add="5">+5m</button>
-                    <button type="button" class="btn-loss-chip" data-target="loss_no_operator" data-add="15">+15m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_no_operator"
+                      data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_no_operator" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_no_operator" value="0" />
                 </div>
               </div>
 
@@ -376,7 +396,8 @@
                     <button type="button" class="btn-loss-chip" data-target="loss_startup" data-add="5">+5m</button>
                     <button type="button" class="btn-loss-chip" data-target="loss_startup" data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_startup" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_startup" value="0" />
                 </div>
               </div>
 
@@ -391,7 +412,8 @@
                     <button type="button" class="btn-loss-chip" data-target="loss_setup" data-add="5">+5m</button>
                     <button type="button" class="btn-loss-chip" data-target="loss_setup" data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_setup" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_setup" value="0" />
                 </div>
               </div>
 
@@ -404,9 +426,11 @@
                 <div class="loss-control-group">
                   <div class="quick-chips">
                     <button type="button" class="btn-loss-chip" data-target="loss_jig_fixture" data-add="5">+5m</button>
-                    <button type="button" class="btn-loss-chip" data-target="loss_jig_fixture" data-add="15">+15m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_jig_fixture"
+                      data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_jig_fixture" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_jig_fixture" value="0" />
                 </div>
               </div>
 
@@ -419,9 +443,11 @@
                 <div class="loss-control-group">
                   <div class="quick-chips">
                     <button type="button" class="btn-loss-chip" data-target="loss_programming" data-add="5">+5m</button>
-                    <button type="button" class="btn-loss-chip" data-target="loss_programming" data-add="15">+15m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_programming"
+                      data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_programming" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_programming" value="0" />
                 </div>
               </div>
 
@@ -434,9 +460,11 @@
                 <div class="loss-control-group">
                   <div class="quick-chips">
                     <button type="button" class="btn-loss-chip" data-target="loss_measurement" data-add="5">+5m</button>
-                    <button type="button" class="btn-loss-chip" data-target="loss_measurement" data-add="15">+15m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_measurement"
+                      data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_measurement" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_measurement" value="0" />
                 </div>
               </div>
 
@@ -451,7 +479,8 @@
                     <button type="button" class="btn-loss-chip" data-target="loss_document" data-add="5">+5m</button>
                     <button type="button" class="btn-loss-chip" data-target="loss_document" data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_document" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_document" value="0" />
                 </div>
               </div>
 
@@ -466,7 +495,8 @@
                     <button type="button" class="btn-loss-chip" data-target="loss_speed" data-add="5">+5m</button>
                     <button type="button" class="btn-loss-chip" data-target="loss_speed" data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_speed" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_speed" value="0" />
                 </div>
               </div>
 
@@ -478,10 +508,13 @@
                 </div>
                 <div class="loss-control-group">
                   <div class="quick-chips">
-                    <button type="button" class="btn-loss-chip" data-target="loss_quality_insp" data-add="5">+5m</button>
-                    <button type="button" class="btn-loss-chip" data-target="loss_quality_insp" data-add="15">+15m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_quality_insp"
+                      data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_quality_insp"
+                      data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_quality_insp" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_quality_insp" value="0" />
                 </div>
               </div>
 
@@ -496,7 +529,8 @@
                     <button type="button" class="btn-loss-chip" data-target="loss_cleaning" data-add="5">+5m</button>
                     <button type="button" class="btn-loss-chip" data-target="loss_cleaning" data-add="15">+15m</button>
                   </div>
-                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" class="loss-number-field loss-calc-trigger" id="loss_cleaning" value="0" />
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_cleaning" value="0" />
                 </div>
               </div>
             </div>
@@ -504,7 +538,8 @@
             <!-- Remarks / Root Cause -->
             <div class="form-group">
               <label for="input-remarks">Remarks (Why Did Losses Occur / Root Cause) *</label>
-              <textarea id="input-remarks" rows="2" placeholder="Specify reasons for stoppages, insert wear, setting delays, or material wait..."></textarea>
+              <textarea id="input-remarks" rows="2"
+                placeholder="Specify reasons for stoppages, insert wear, setting delays, or material wait..."></textarea>
             </div>
           </div>
 
@@ -530,32 +565,44 @@
           <div class="calc-block">
             <span class="calc-block-label">Availability (A)</span>
             <span class="calc-block-val" id="live-calc-availability">100.0%</span>
-            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">Uptime Efficiency</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">Uptime
+              Efficiency</span>
           </div>
 
           <div class="calc-block">
             <span class="calc-block-label">Performance (P)</span>
             <span class="calc-block-val" id="live-calc-performance">0.0%</span>
-            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">Speed & Run Rate</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">Speed & Run
+              Rate</span>
           </div>
 
           <div class="calc-block">
             <span class="calc-block-label">Quality (Q)</span>
             <span class="calc-block-val" id="live-calc-quality">100.0%</span>
-            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">First-Pass Yield</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">First-Pass
+              Yield</span>
           </div>
 
           <div class="calc-block">
             <span class="calc-block-label">Overall OEE</span>
             <span class="calc-block-val highlight-oee" id="live-calc-oee">0.0%</span>
-            <span style="font-size: 0.68rem; color: var(--cyan-400); font-family: var(--font-sans); font-weight: 700;">Overall Effectiveness</span>
+            <span
+              style="font-size: 0.68rem; color: var(--cyan-400); font-family: var(--font-sans); font-weight: 700;">Overall
+              Effectiveness</span>
+          </div>
+
+          <div class="calc-block">
+            <span class="calc-block-label">Productivity</span>
+            <span class="calc-block-val" style="color: var(--amber-400);" id="live-calc-productivity">0.0</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">Good Parts / Operating Hr</span>
           </div>
         </div>
 
         <!-- Action Buttons -->
         <div class="form-action-footer">
           <button type="button" class="btn btn-secondary" id="btn-cancel-entry">Cancel & Return</button>
-          <button type="submit" class="btn btn-success" id="btn-submit-entry" style="padding: 11px 28px; font-size: 0.95rem;">
+          <button type="submit" class="btn btn-success" id="btn-submit-entry"
+            style="padding: 11px 28px; font-size: 0.95rem;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
               <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -575,33 +622,161 @@
       <!-- Dashboard Header -->
       <div class="dashboard-header-bar">
         <div class="dashboard-title-area">
-          <h2>Shopfloor OEE & Loss Occurrence Dashboard</h2>
-          <p>Automated visual analytics of line availability, performance, quality, and downtime reasons.</p>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+            <h2>Shopfloor OEE & Loss Occurrence Dashboard</h2>
+            <span class="live-stream-badge" title="Database auto-polls live records every 5 seconds">
+              <span class="ping-dot"></span>
+              <span>LIVE DB AUTO-SYNC</span>
+            </span>
+          </div>
+          <p>Daily, weekly, and monthly performance intelligence with ISO time-weighted OEE & 13 downtime loss breakdowns for each machine separately.</p>
         </div>
 
-        <!-- Filters & Live Stream Status -->
-        <div class="dashboard-filters">
-          <div class="live-stream-badge" title="Database auto-polls live records every 5 seconds">
-            <span class="ping-dot"></span>
-            <span>LIVE DB AUTO-SYNC</span>
-          </div>
-          <select id="dash-filter-machine" class="dashboard-select">
+        <!-- Header Actions -->
+        <div class="dashboard-filters" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary" id="btn-seed-sample" title="Populate realistic 3-week test records across CNC, VMC & HMC machines to explore all views immediately"
+            style="padding: 7px 14px; font-size: 0.8rem; border-color: rgba(99, 102, 241, 0.4); color: var(--indigo-400);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            ⚡ Load Sample Data
+          </button>
+
+          <button type="button" class="btn btn-secondary" id="btn-export-period-csv" title="Export this period's machine matrix, 13 losses, and history to CSV"
+            style="padding: 7px 14px; font-size: 0.8rem; border-color: rgba(6, 182, 212, 0.4); color: var(--cyan-400);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            📥 Export Period CSV
+          </button>
+
+          <select id="dash-filter-machine" class="dashboard-select" style="display: none;">
             <option value="ALL">All 11 Machines (Combined Line)</option>
-            <!-- Injected by JS -->
           </select>
         </div>
       </div>
 
-      <!-- Executive OEE Cockpit Hero Section (Formula-Free, Visual-Driven) -->
+      <!-- ==================================================================== -->
+      <!-- PERIODIC ANALYSIS CONTROL CONSOLE                                   -->
+      <!-- ==================================================================== -->
+      <div class="periodic-control-console">
+        <!-- Row 1: Time Horizon Tabs & Interval Picker -->
+        <div class="console-row-horizon">
+          <div class="console-label-group">
+            <span class="console-kicker">1. TIME HORIZON</span>
+            <div class="period-tabs-group" id="period-tabs-group">
+              <button type="button" class="period-tab-btn active" data-period="daily">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Daily (Each Day)
+              </button>
+              <button type="button" class="period-tab-btn" data-period="weekly">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                  <line x1="10" y1="14" x2="14" y2="14"></line>
+                </svg>
+                Weekly (ISO Weeks)
+              </button>
+              <button type="button" class="period-tab-btn" data-period="monthly">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="12" cy="14" r="3"></circle>
+                </svg>
+                Monthly
+              </button>
+              <button type="button" class="period-tab-btn" data-period="overall">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                Overall (All-Time)
+              </button>
+            </div>
+          </div>
+
+          <div class="console-interval-picker">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span class="console-kicker" id="label-interval-picker">SELECT SPECIFIC DAY</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="select-period-interval" class="dashboard-select period-interval-select">
+                  <!-- Populated dynamically: Days, Weeks, or Months -->
+                </select>
+                <button type="button" class="btn btn-secondary btn-icon-only" id="btn-period-prev" title="Previous Period">◀</button>
+                <button type="button" class="btn btn-secondary btn-icon-only" id="btn-period-next" title="Next Period">▶</button>
+              </div>
+            </div>
+            <div class="active-period-tag" id="badge-active-period-label">
+              <span class="indicator-dot"></span>
+              <span id="txt-active-period">Latest Day</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: 11 Machine Roster Quick-Pills (Separation for each machine) -->
+        <div class="console-row-machines">
+          <div class="console-machines-header">
+            <span class="console-kicker">2. MACHINE SELECTION (EVALUATE EACH MACHINE SEPARATELY OR COMBINED MATRIX)</span>
+            <span class="active-machine-inspecting" id="txt-active-target-title">Currently Inspecting: All 11 Machines Matrix</span>
+          </div>
+
+          <div class="machine-roster-pills-bar" id="machine-roster-pills">
+            <!-- Combined Line Pill -->
+            <button type="button" class="machine-pill-btn active pill-all" data-machine-code="ALL">
+              <span class="pill-dot"></span>
+              🏢 All 11 Machines Matrix
+            </button>
+
+            <span class="pill-divider"></span>
+
+            <!-- CNC Machines Group -->
+            <span class="machine-group-tag tag-cnc">CNC</span>
+            <button type="button" class="machine-pill-btn pill-cnc" data-machine-code="CNC-DX200-1">CNC DX 200-1</button>
+            <button type="button" class="machine-pill-btn pill-cnc" data-machine-code="CNC-200-2">CNC 200-2</button>
+            <button type="button" class="machine-pill-btn pill-cnc" data-machine-code="CNC-DX250">CNC DX 250</button>
+            <button type="button" class="machine-pill-btn pill-cnc" data-machine-code="CNC-DX12B">CNC DX12B</button>
+
+            <span class="pill-divider"></span>
+
+            <!-- VMC Machines Group -->
+            <span class="machine-group-tag tag-vmc">VMC</span>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-1050">VMC 1050</button>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-1880">VMC 1880</button>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-850">VMC 850</button>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-HAAS">VMC HAAS</button>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-PX20">VMC PX 20</button>
+
+            <span class="pill-divider"></span>
+
+            <!-- HMC Machines Group -->
+            <span class="machine-group-tag tag-hmc">HMC</span>
+            <button type="button" class="machine-pill-btn pill-hmc" data-machine-code="HMC-1">HMC 1</button>
+            <button type="button" class="machine-pill-btn pill-hmc" data-machine-code="HMC-2">HMC 2</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- EXECUTIVE OEE COCKPIT FOR SELECTED MACHINE & HORIZON                -->
+      <!-- ==================================================================== -->
       <div class="executive-cockpit-grid">
         <!-- Main Circular OEE Radial Gauge Card -->
         <div class="gauge-hero-card">
           <div class="gauge-hero-header">
             <div class="gauge-title-box">
-              <span class="gauge-badge-kicker">Shopfloor Health Index</span>
-              <h3 class="gauge-main-title">Overall Equipment Effectiveness</h3>
+              <span class="gauge-badge-kicker" id="target-kicker-name">Shopfloor Health Index</span>
+              <h3 class="gauge-main-title" id="target-main-title">Overall Equipment Effectiveness</h3>
             </div>
-            <span class="oee-rating-badge" id="oee-rating-badge">Optimal (≥ 80%)</span>
+            <span class="oee-rating-badge" id="oee-rating-badge">Optimal (≥ 85%)</span>
           </div>
 
           <div class="radial-gauge-display">
@@ -611,15 +786,15 @@
             </svg>
             <div class="radial-center-content">
               <div class="radial-oee-value">
-                <span id="dash-metric-oee">82.4</span><span class="unit">%</span>
+                <span id="dash-metric-oee">0.0</span><span class="unit">%</span>
               </div>
-              <span class="radial-oee-sub">Line OEE Score</span>
+              <span class="radial-oee-sub" id="target-oee-sub">Target OEE Score</span>
             </div>
           </div>
 
           <div class="gauge-hero-footer">
             <div class="target-marker">Target Benchmark: <strong>≥ 85.0% World Class</strong></div>
-            <div class="status-marker" id="oee-status-indicator">🟢 Line Running Optimally</div>
+            <div class="status-marker" id="oee-status-indicator">⚪ Ready for Production Data</div>
           </div>
         </div>
 
@@ -630,16 +805,16 @@
             <div class="pillar-top">
               <div class="pillar-info">
                 <span class="pillar-name">Availability (A)</span>
-                <span class="pillar-sub">Operating Uptime vs Shift Budget</span>
+                <span class="pillar-sub">Operating Uptime vs Shift Planned Budget</span>
               </div>
-              <div class="pillar-val"><span id="dash-metric-avail">85.6</span>%</div>
+              <div class="pillar-val"><span id="dash-metric-avail">0.0</span>%</div>
             </div>
             <div class="pillar-progress-track">
-              <div class="pillar-progress-bar" id="bar-avail" style="width: 85.6%;"></div>
+              <div class="pillar-progress-bar" id="bar-avail" style="width: 0%;"></div>
             </div>
             <div class="pillar-footer">
-              <span>Operating Time: <strong id="dash-op-time-display">1,600m</strong></span>
-              <span>Downtime Losses: <strong id="dash-total-losses" style="color: var(--rose-400)">290m</strong></span>
+              <span>Operating Time: <strong id="dash-op-time-display">0m</strong></span>
+              <span>Downtime Losses: <strong id="dash-total-losses" style="color: var(--rose-400)">0m</strong></span>
             </div>
           </div>
 
@@ -648,16 +823,16 @@
             <div class="pillar-top">
               <div class="pillar-info">
                 <span class="pillar-name">Performance (P)</span>
-                <span class="pillar-sub">Cycle Time Speed & Run Rate</span>
+                <span class="pillar-sub">Cycle Time Run Rate & Operating Speed</span>
               </div>
-              <div class="pillar-val"><span id="dash-metric-perf">98.2</span>%</div>
+              <div class="pillar-val"><span id="dash-metric-perf">0.0</span>%</div>
             </div>
             <div class="pillar-progress-track">
-              <div class="pillar-progress-bar" id="bar-perf" style="width: 98.2%;"></div>
+              <div class="pillar-progress-bar" id="bar-perf" style="width: 0%;"></div>
             </div>
             <div class="pillar-footer">
-              <span>Total Units Produced: <strong id="dash-total-output">547 pcs</strong></span>
-              <span>Operating Efficiency: <strong style="color: var(--cyan-400);">98.2%</strong></span>
+              <span>Total Units Produced: <strong id="dash-total-output">0 pcs</strong></span>
+              <span>Ideal Operating Run: <strong id="dash-ideal-time-display" style="color: var(--cyan-400);">0m</strong></span>
             </div>
           </div>
 
@@ -668,25 +843,25 @@
                 <span class="pillar-name">Quality (Q)</span>
                 <span class="pillar-sub">First-Pass Yield & Part Conformance</span>
               </div>
-              <div class="pillar-val"><span id="dash-metric-qual">98.5</span>%</div>
+              <div class="pillar-val"><span id="dash-metric-qual">100.0</span>%</div>
             </div>
             <div class="pillar-progress-track">
-              <div class="pillar-progress-bar" id="bar-qual" style="width: 98.5%;"></div>
+              <div class="pillar-progress-bar" id="bar-qual" style="width: 100%;"></div>
             </div>
             <div class="pillar-footer">
-              <span>Accepted Good: <strong id="dash-good-output" style="color: var(--emerald-400);">539 pcs</strong></span>
-              <span>Scrap / Reject: <strong id="dash-scrap-output" style="color: var(--rose-400);">8 pcs</strong></span>
+              <span>Accepted Good: <strong id="dash-good-output" style="color: var(--emerald-400);">0 pcs</strong></span>
+              <span>Scrap / Reject: <strong id="dash-scrap-output" style="color: var(--rose-400);">0 pcs</strong></span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Deep-Dive Loss Identification Ribbon (Why, How, and How Many Times) -->
+      <!-- Deep-Dive Loss Summary Ribbon -->
       <div class="loss-deepdive-ribbon">
         <div class="deepdive-stat-box">
           <span class="deepdive-label">Total Stoppages Recorded</span>
           <div class="deepdive-value">
-            <span id="dash-total-incidents">14</span>
+            <span id="dash-total-incidents">0</span>
             <span class="unit">times</span>
           </div>
           <span class="deepdive-sub">Stoppage frequency count</span>
@@ -694,24 +869,121 @@
 
         <div class="deepdive-stat-box">
           <span class="deepdive-label">Primary Root-Cause Category</span>
-          <div class="deepdive-value highlight-rose" id="dash-top-loss-name">Breakdown Loss</div>
+          <div class="deepdive-value highlight-rose" id="dash-top-loss-name">None</div>
           <span class="deepdive-sub">Highest lost capacity</span>
         </div>
 
         <div class="deepdive-stat-box">
           <span class="deepdive-label">Mean Downtime per Event (MTTR)</span>
-          <div class="deepdive-value" id="dash-avg-stoppage">20.7m</div>
+          <div class="deepdive-value" id="dash-avg-stoppage">0.0m</div>
           <span class="deepdive-sub">Average minutes per incident</span>
         </div>
 
         <div class="deepdive-stat-box">
           <span class="deepdive-label">Most Frequent Loss Category</span>
-          <div class="deepdive-value highlight-amber" id="dash-most-frequent-loss">Setup & Setting</div>
+          <div class="deepdive-value highlight-amber" id="dash-most-frequent-loss">None</div>
           <span class="deepdive-sub">Most repeated stoppage reason</span>
+        </div>
+
+        <div class="deepdive-stat-box highlight-prod-box">
+          <span class="deepdive-label">Productivity (Good/Hr)</span>
+          <div class="deepdive-value" style="color: var(--amber-400);">
+            <span id="dash-metric-productivity">0.0</span>
+            <span class="unit" style="font-size: 0.85rem; color: var(--text-secondary);">parts/hr</span>
+          </div>
+          <span class="deepdive-sub">Total Good Parts / Operating Hours</span>
         </div>
       </div>
 
-      <!-- Charts Section: Loss Occurrence Visuals -->
+      <!-- ==================================================================== -->
+      <!-- SECTION: 11-MACHINE PERFORMANCE COMPARISON MATRIX (SEPARATE MACHINE) -->
+      <!-- ==================================================================== -->
+      <div class="machine-matrix-section" id="section-machine-matrix">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="3" y1="15" x2="21" y2="15"></line>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+              <line x1="15" y1="3" x2="15" y2="21"></line>
+            </svg>
+            11-Machine Performance Matrix (<span id="matrix-period-subtitle">Selected Period</span>)
+          </div>
+          <span style="font-size: 0.78rem; color: var(--cyan-400); font-family: var(--font-mono);">SEPARATE MACHINE BREAKDOWN</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="root-cause-table machine-comparison-table">
+            <thead>
+              <tr>
+                <th>Machine</th>
+                <th>Type</th>
+                <th>Shifts</th>
+                <th>Planned</th>
+                <th>Operating</th>
+                <th>Loss</th>
+                <th>Availability</th>
+                <th>Performance</th>
+                <th>Quality</th>
+                <th>OEE %</th>
+                <th>Productivity (Parts/Hr)</th>
+                <th>Output (Good / Scrap)</th>
+                <th>Primary Downtime Loss</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="machine-matrix-tbody">
+              <!-- Populated dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- SECTION: CHRONOLOGICAL TREND VISUALIZATIONS (OEE & LOSSES EVOLUTION)-->
+      <!-- ==================================================================== -->
+      <div class="charts-grid-2">
+        <!-- 1. OEE & APQ Progression Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <span id="title-trend-oee">OEE & APQ Progression Over Time</span>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--cyan-400); font-family: var(--font-mono);" id="badge-trend-period-type">DAILY TREND</span>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chart-trend-oee"></canvas>
+          </div>
+        </div>
+
+        <!-- 2. Downtime Losses Evolution Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+                <line x1="7" y1="18" x2="7" y2="10"></line>
+                <line x1="12" y1="18" x2="12" y2="6"></line>
+                <line x1="17" y1="18" x2="17" y2="13"></line>
+              </svg>
+              <span id="title-trend-losses">Downtime Losses Progression (Minutes)</span>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--rose-400); font-family: var(--font-mono);">LOSS EVOLUTION</span>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chart-trend-losses"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- SECTION: 13 SHOPFLOOR DOWNTIME LOSSES BREAKDOWN                      -->
+      <!-- ==================================================================== -->
       <div class="charts-grid-2">
         <!-- 1. Dual Bar Chart: 13 Losses in Minutes & Incident Frequency -->
         <div class="chart-card">
@@ -722,9 +994,9 @@
                 <line x1="12" y1="20" x2="12" y2="4"></line>
                 <line x1="6" y1="20" x2="6" y2="14"></line>
               </svg>
-              Loss Identification: Duration (Mins) & Frequency (Times Occurred)
+              <span id="title-loss-pareto">13 Loss Categories: Duration (Mins) & Frequency</span>
             </div>
-            <span style="font-size: 0.75rem; color: var(--cyan-400); font-family: var(--font-mono);">13 CATEGORIES</span>
+            <span style="font-size: 0.75rem; color: var(--cyan-400); font-family: var(--font-mono);">13 LOSSES</span>
           </div>
           <div class="chart-container-wrap">
             <canvas id="chart-losses-pareto"></canvas>
@@ -739,9 +1011,9 @@
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M12 2a10 10 0 0 1 10 10h-10z"></path>
               </svg>
-              Why Losses Occur (Root Stream)
+              Loss Category Stream Distribution
             </div>
-            <span style="font-size: 0.75rem; color: var(--text-muted);">Distribution</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Root Streams</span>
           </div>
           <div class="chart-container-wrap">
             <canvas id="chart-losses-donut"></canvas>
@@ -749,24 +1021,88 @@
         </div>
       </div>
 
-      <!-- Full-Width Chart: OEE % Comparison Across All 11 Machines -->
-      <div class="full-chart-card">
-        <div class="chart-header">
-          <div class="chart-title">
+      <!-- Detailed 13 Losses Table -->
+      <div class="root-cause-section" style="margin-bottom: 32px;">
+        <div class="panel-header">
+          <div class="panel-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 3v18h18"></path>
-              <path d="M18 17l-5-5-4 4-4-4"></path>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
-            OEE % Comparison Across All 11 Machines
+            <span id="title-losses-table">13 Shopfloor Downtime Losses Distribution & Impact Table</span>
           </div>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">Shopfloor Line Performance</span>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Loss Impact Matrix</span>
         </div>
-        <div class="chart-container-wrap">
-          <canvas id="chart-machines-oee"></canvas>
+
+        <div style="overflow-x: auto;">
+          <table class="root-cause-table loss-breakdown-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Downtime Loss Category</th>
+                <th>Stream / Department</th>
+                <th>Total Minutes</th>
+                <th>Total Hours</th>
+                <th>Incident Count</th>
+                <th>% of Downtime</th>
+                <th>Availability Impact</th>
+              </tr>
+            </thead>
+            <tbody id="losses-breakdown-tbody">
+              <!-- Populated dynamically by app.js -->
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- "Why & How Loss Occurs" Root-Cause Log Table -->
+      <!-- ==================================================================== -->
+      <!-- SECTION: CHRONOLOGICAL PERIOD HISTORY TABLE FOR TARGET MACHINE       -->
+      <!-- ==================================================================== -->
+      <div class="root-cause-section" id="section-period-history" style="margin-bottom: 32px;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="title-period-history">Chronological History Table (Day-by-Day / Week-by-Week)</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--cyan-400); font-family: var(--font-mono);" id="badge-history-horizon">HISTORICAL ARCHIVE</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="root-cause-table">
+            <thead>
+              <tr>
+                <th>Period Interval</th>
+                <th>Shifts Logged</th>
+                <th>Planned Mins</th>
+                <th>Operating Mins</th>
+                <th>Loss Mins</th>
+                <th>Availability</th>
+                <th>Performance</th>
+                <th>Quality</th>
+                <th>OEE %</th>
+                <th>Productivity</th>
+                <th>Total Produced</th>
+                <th>Good Units</th>
+                <th>Scrap Units</th>
+                <th>Top Stoppage Reason</th>
+              </tr>
+            </thead>
+            <tbody id="period-history-tbody">
+              <!-- Populated dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- SECTION: WHY & HOW LOSSES OCCURRED ROOT CAUSE AUDIT                  -->
+      <!-- ==================================================================== -->
       <div class="root-cause-section">
         <div class="panel-header">
           <div class="panel-title">
@@ -810,23 +1146,45 @@
   <div class="modal-overlay hidden" id="modal-supabase">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Supabase Status</h3>
+        <h3>Connect Supabase Database</h3>
         <button class="modal-close-btn" id="btn-close-modal">&times;</button>
       </div>
       <div class="modal-body">
         <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 18px;">
-          This deployment reads Supabase credentials only from Vercel environment variables or local `.env.local` when running `vercel dev`.
+          Paste your Supabase credentials to synchronize multi-part production logs and 13-loss breakdown records
+          directly with your cloud PostgreSQL database.
         </p>
 
-        <div id="supabase-test-result" style="display: none; padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.85rem; margin-top: 12px;"></div>
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="cfg-supabase-url">Supabase Project URL</label>
+          <input type="text" id="cfg-supabase-url" placeholder="https://your-project.supabase.co" />
+        </div>
 
-        <div style="margin-top: 18px; padding: 12px; background: rgba(0, 0, 0, 0.3); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
-          <strong style="color: var(--cyan-400)">Quick Setup:</strong> Set <code>VERCEL_SUPABASE_URL</code> and <code>VERCEL_SUPABASE_ANON_KEY</code> in Vercel Project Settings, or in `.env.local` for local development.<br />
-          <strong style="color: var(--emerald-400)">SQL Schema:</strong> Run the script in <code>supabase/schema.sql</code> in your Supabase SQL Editor before using live data.
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="cfg-supabase-key">Supabase Public Anon Key</label>
+          <input type="password" id="cfg-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+        </div>
+
+        <div id="supabase-test-result"
+          style="display: none; padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.85rem; margin-top: 12px;">
+        </div>
+
+        <div
+          style="margin-top: 18px; padding: 12px; background: rgba(0, 0, 0, 0.3); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
+          <strong style="color: var(--cyan-400)">Quick Setup:</strong> You can also paste your credentials directly in
+          <code>js/config.js</code>.<br />
+          <strong style="color: var(--emerald-400)">SQL Schema:</strong> Run the script in
+          <code>supabase/schema.sql</code> in your Supabase SQL Editor to create tables with public anon RLS
+          permissions.
         </div>
       </div>
-      <div class="modal-footer" style="justify-content: center;">
-        <button type="button" class="btn btn-primary" id="btn-close-supabase-modal">Close</button>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-secondary" id="btn-disconnect-supabase"
+          style="color: var(--rose-400); border-color: rgba(244, 63, 94, 0.3);">Disconnect</button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" id="btn-test-supabase">Test Connection</button>
+          <button type="button" class="btn btn-primary" id="btn-save-supabase">Save & Connect</button>
+        </div>
       </div>
     </div>
   </div>
@@ -844,23 +1202,29 @@
       </div>
       <div class="modal-body" style="padding: 22px 20px;">
         <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 16px;">
-          Scan with your Android camera or Chrome browser to manage machine production details and 13 losses straight from the shopfloor:
+          Scan with your Android camera or Chrome browser to manage machine production details and 13 losses straight
+          from the shopfloor:
         </p>
-        <div style="background: white; padding: 14px; border-radius: var(--radius-lg); display: inline-block; box-shadow: 0 8px 30px rgba(0,0,0,0.5); margin-bottom: 16px;">
-          <img src="assets/mobile_qr.png" alt="Shopfloor Mobile QR Code" style="width: 210px; height: 210px; display: block; image-rendering: pixelated;" />
+        <div
+          style="background: white; padding: 14px; border-radius: var(--radius-lg); display: inline-block; box-shadow: 0 8px 30px rgba(0,0,0,0.5); margin-bottom: 16px;">
+          <img src="assets/mobile_qr.png" alt="Shopfloor Mobile QR Code"
+            style="width: 210px; height: 210px; display: block; image-rendering: pixelated;" />
         </div>
-        <div style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-md); padding: 10px 14px; font-family: var(--font-mono); font-size: 0.95rem; color: var(--cyan-400); margin-bottom: 14px; user-select: all; font-weight: 600;">
+        <div
+          style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-md); padding: 10px 14px; font-family: var(--font-mono); font-size: 0.95rem; color: var(--cyan-400); margin-bottom: 14px; user-select: all; font-weight: 600;">
           http://10.204.85.125:3000
         </div>
-        <div style="text-align: left; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-md);">
-          💡 <strong>Shopfloor Operator Quick Steps:</strong><br/>
-          1. Connect Android device to the factory / shopfloor Wi-Fi.<br/>
-          2. Open the URL or scan the QR code above.<br/>
+        <div
+          style="text-align: left; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-md);">
+          💡 <strong>Shopfloor Operator Quick Steps:</strong><br />
+          1. Connect Android device to the factory / shopfloor Wi-Fi.<br />
+          2. Open the URL or scan the QR code above.<br />
           3. Tap <strong>&vellip; (Chrome menu) &rarr; "Add to Home screen"</strong> to install as a full-screen app!
         </div>
       </div>
       <div class="modal-footer" style="justify-content: center;">
-        <button type="button" class="btn btn-secondary" id="btn-dismiss-qr-modal" style="min-width: 140px;">Close</button>
+        <button type="button" class="btn btn-secondary" id="btn-dismiss-qr-modal"
+          style="min-width: 140px;">Close</button>
       </div>
     </div>
   </div>
@@ -871,4 +1235,5 @@
   <!-- App Orchestrator Script -->
   <script type="module" src="js/app.js"></script>
 </body>
+
 </html>
