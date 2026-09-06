@@ -643,3 +643,470 @@
   color: var(--text-muted);
 }
 
+/* ==========================================================================
+   PERIODIC ANALYSIS CONTROL CONSOLE & SEPARATE MACHINE MATRIX STYLES
+   ========================================================================== */
+
+.periodic-control-console {
+  background: linear-gradient(145deg, rgba(17, 26, 46, 0.95), rgba(15, 23, 42, 0.85));
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+
+.periodic-control-console::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan-500), var(--indigo-500), var(--amber-400));
+}
+
+.console-kicker {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Row 1: Horizon Tabs & Dynamic Interval Selector */
+.console-row-horizon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.console-label-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.period-tabs-group {
+  display: flex;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.period-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.period-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.period-tab-btn.active {
+  background: linear-gradient(135deg, var(--cyan-500), #0891b2);
+  color: #ffffff;
+  box-shadow: 0 2px 12px var(--cyan-glow);
+}
+
+.console-interval-picker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.period-interval-select {
+  min-width: 240px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: var(--text-primary);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.period-interval-select:focus {
+  border-color: var(--cyan-400);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+}
+
+.btn-icon-only {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+.active-period-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--cyan-300);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan-400);
+  box-shadow: 0 0 6px var(--cyan-400);
+}
+
+/* Row 2: Machine Roster Quick-Pills */
+.console-row-machines {
+  padding-top: 18px;
+}
+
+.console-machines-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.active-machine-inspecting {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--cyan-400);
+  background: rgba(6, 182, 212, 0.1);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
+.machine-roster-pills-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.machine-group-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.tag-cnc { background: rgba(6, 182, 212, 0.15); color: var(--cyan-400); }
+.tag-vmc { background: rgba(99, 102, 241, 0.15); color: var(--indigo-400); }
+.tag-hmc { background: rgba(245, 158, 11, 0.15); color: var(--amber-400); }
+
+.pill-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-subtle);
+  margin: 0 4px;
+}
+
+.machine-pill-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 6px 13px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.machine-pill-btn:hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+
+/* Category Specific Active States */
+.machine-pill-btn.pill-all.active {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(2, 132, 199, 0.4);
+}
+
+.machine-pill-btn.pill-cnc.active {
+  background: linear-gradient(135deg, var(--cyan-500), #0891b2);
+  color: #ffffff;
+  border-color: var(--cyan-400);
+  box-shadow: 0 0 14px var(--cyan-glow);
+}
+
+.machine-pill-btn.pill-vmc.active {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #ffffff;
+  border-color: #818cf8;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.45);
+}
+
+.machine-pill-btn.pill-hmc.active {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  color: #ffffff;
+  border-color: var(--amber-400);
+  box-shadow: 0 0 14px var(--amber-glow);
+}
+
+/* Machine Comparison Matrix Section & Table */
+.machine-matrix-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.machine-comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.machine-comparison-table th {
+  padding: 12px 12px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.machine-comparison-table td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.machine-comparison-table tr:hover td {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+}
+
+.machine-comparison-table tr.row-focused td {
+  background: rgba(6, 182, 212, 0.08);
+  border-left: 2px solid var(--cyan-400);
+}
+
+/* Status Badges */
+.status-badge-optimal {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald-400);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge-normal {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--cyan-400);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.status-badge-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(244, 63, 94, 0.15);
+  color: var(--rose-400);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.status-badge-inactive {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-inspect-machine {
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  color: var(--cyan-400);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-inspect-machine:hover {
+  background: var(--cyan-500);
+  color: #ffffff;
+  box-shadow: 0 0 10px var(--cyan-glow);
+}
+
+/* Productivity Badges & Stat Box */
+.productivity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--amber-400);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  white-space: nowrap;
+}
+
+.productivity-badge.prod-high {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald-400);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.productivity-badge.prod-zero {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+
+.highlight-prod-box {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  background: linear-gradient(145deg, rgba(17, 26, 46, 0.95), rgba(245, 158, 11, 0.06)) !important;
+}
+
+/* 13-Loss Breakdown Table Specifics */
+.loss-breakdown-table th,
+.loss-breakdown-table td {
+  white-space: nowrap;
+}
+
+.loss-impact-bar-wrap {
+  width: 90px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.loss-impact-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
+}
+
+/* Page 1 Machine Card Action Row */
+.card-action-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-card-analyze {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-card-analyze:hover {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: var(--cyan-400);
+  color: var(--cyan-300);
+}
+
+@media (max-width: 900px) {
+  .console-row-horizon {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .console-interval-picker {
+    width: 100%;
+  }
+  .period-interval-select {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+
