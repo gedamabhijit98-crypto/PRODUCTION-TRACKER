@@ -1,129 +1,1239 @@
-# Industrial Shopfloor Production & OEE Loss Tracker
+<!DOCTYPE html>
+<html lang="en">
 
-A web application designed for precision machine shops and CNC/VMC/HMC production lines. It tracks shift output, multi-part cycle times, operator performance, and 13 specific downtime losses across 11 shopfloor machines, featuring an automated OEE & Loss Occurrence Dashboard.
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Shopfloor Production & OEE Loss Tracker | 11 Machines</title>
+  <meta name="description"
+    content="Industrial Production & OEE Downtime Loss Tracking System with Multi-Part Production and 13-Loss Analysis across 11 CNC, VMC, and HMC machines." />
 
-This repository is organized as a static web app at the project root:
-`index.html`, `assets/`, `css/`, `js/`, `supabase/`, and `manifest.json`.
+  <!-- Mobile & Android PWA Enhancements -->
+  <meta name="theme-color" content="#030712" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="assets/icon-192.png" />
 
----
+  <!-- Design System CSS -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/forms.css" />
 
-## 🏭 11 Shopfloor Machines
-1. **CNC DX 200-1** (CNC Turning Center)
-2. **CNC 200-2** (CNC Turning Center)
-3. **CNC DX 250** (CNC Heavy Lathe)
-4. **CNC DX12B** (Precision Lathe)
-5. **VMC 1050** (Vertical Machining Center)
-6. **VMC 1880** (Heavy Bed Milling Center)
-7. **VMC 850** (Vertical Machining Center)
-8. **VMC HAAS** (HAAS High Precision Vertical Center)
-9. **VMC PX 20** (Compact Milling Center)
-10. **HMC 1** (Horizontal Machining Center)
-11. **HMC 2** (Horizontal Machining Center)
+  <!-- Supabase Official JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Chart.js for High-End Animated Visuals -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 
----
+<body>
 
-## 🧭 3-Page Workflow
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="brand-section">
+      <div class="brand-logo" title="Shopfloor OEE Precision Tracker">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </div>
+      <div class="brand-info">
+        <h1>PROD-TRACK INDUSTRIAL</h1>
+        <span>OEE & 13-Loss Occurrence System</span>
+      </div>
+    </div>
 
-### Page 1: Minimalist Machine Launchpad
-- Clean, uncluttered view displaying **only the 11 machine names**.
-- Hover lift and glowing accent micro-animations.
-- Clicking any machine immediately opens **Page 2** pre-configured for that machine.
+    <!-- 3 Core Navigation Tabs -->
+    <nav class="page-nav-tabs" aria-label="Main Navigation">
+      <button class="nav-tab-btn active" id="tab-machines" data-target="view-machines">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        1. Machines
+      </button>
 
-### Page 2: Dedicated Machine Production & 13-Loss Fill-up Tab
-- **Shift & Operator Parameters**: Date, Shift (`Shift A`, `Shift B`, `Shift C`), Shift Hours (`8.5 hrs / 510 mins` or `7.0 hrs / 420 mins`), Operator Name.
-- **Multi-Part Production Details**:
-  - **Part Number 1**: Name/Number, Cycle Time (mins), Quantity Produced
-  - **Part Number 2**: Name/Number, Cycle Time (mins), Quantity Produced
-  - **Part Number 3**: Name/Number, Cycle Time (mins), Quantity Produced
-  - Total Scrap / Rejected Quantity
-- **13 Standard Loss Categories (in Minutes)**:
-  1. `Breakdown Loss`
-  2. `No Plan`
-  3. `No Material`
-  4. `No Operator`
-  5. `Start Up`
-  6. `Setup`
-  7. `Jig & Fixture Issue`
-  8. `Programming Loss`
-  9. `Measurement & Adjustment`
-  10. `Document Loss`
-  11. `Speed Loss`
-  12. `Quality Inspection`
-  13. `Cleaning`
-  - **Remarks / Root Cause** ("Why did loss occur") textarea.
-- **Live Auto-Calculated Ribbon**: Live calculation of Planned Time, Total Losses, Net Operating Time, Availability (A), Performance (P), Quality (Q), and Overall OEE (%).
-- "Save Record & View Dashboard" button saves the entry and transitions directly to Page 3.
+      <button class="nav-tab-btn" id="tab-fillup" data-target="view-fillup">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+        2. Production Fill-up
+      </button>
 
-### Page 3: Executive OEE & Loss Occurrence Dashboard
-- Automated visual analytics powered by **Chart.js**:
-  - **Mathematical OEE Standard**:
-    $$\text{Availability (A)} = \frac{\text{Operating Time}}{\text{Planned Shift Time}} \times 100$$
-    $$\text{Performance (P)} = \frac{\sum (\text{Cycle Time}_i \times \text{Quantity}_i)}{\text{Operating Time}} \times 100$$
-    $$\text{Quality (Q)} = \frac{\text{Good Parts}}{\text{Total Parts Produced}} \times 100$$
-    $$\text{OEE (\%)} = \frac{A \times P \times Q}{10000}$$
-- **4 KPI Metric Cards**: Overall Line OEE, Availability (A), Performance (P), Quality (Q).
-- **Pareto Bar Chart**: Duration ranking across all 13 loss categories.
-- **Loss Classification Donut Chart**: Breakdown of downtime into functional areas (Equipment, Process/Setup, Logistics, Quality, Maintenance).
-- **Line Performance Comparison Bar Chart**: OEE % across all 11 machines.
-- **"Why Does Loss Occur?" Root-Cause Log Table**: Qualitative audit of operator remarks and causes by machine and shift.
+      <button class="nav-tab-btn" id="tab-analytics" data-target="view-analytics">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 20V10M12 20V4M6 20v-6"></path>
+        </svg>
+        3. OEE & Loss Dashboard
+      </button>
+    </nav>
 
----
+    <!-- Header Actions & Clocks -->
+    <div class="nav-actions">
+      <button class="btn btn-secondary" id="btn-open-mobile-qr" title="Scan QR Code to open on Android Phone"
+        style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(6, 182, 212, 0.4); color: var(--cyan-400);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+        📱 Android QR
+      </button>
 
-## ⚡ Local Preview
+      <div class="live-clock-pill">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span id="live-clock">--:--:--</span>
+      </div>
 
-This app is now env-driven for Supabase, so the clean local workflow is Vercel's dev server.
+      <div class="shift-badge">
+        <span class="status-dot"></span>
+        <span id="shift-name">Shift A</span>
+      </div>
 
-Recommended local options:
-```bash
-npx vercel dev
-```
-or
-```bash
-npx vercel dev --listen 3000
-```
+      <button class="db-status-pill" id="btn-open-db-settings" title="Supabase Cloud Database Settings">
+        <span class="status-dot offline" id="db-status-dot"></span>
+        <span id="db-status-text">Supabase: Offline</span>
+      </button>
 
-Then open the local URL shown by Vercel. Add a `.env.local` file with `VERCEL_SUPABASE_URL` and `VERCEL_SUPABASE_ANON_KEY` for local testing.
+      <button class="btn btn-secondary" id="btn-clear-data" title="Clear entered production logs to start clean"
+        style="padding: 7px 14px; font-size: 0.8rem; border-color: rgba(244, 63, 94, 0.35); color: var(--rose-400);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Clear Data
+      </button>
 
-## 🚀 Deployment
+      <button class="btn btn-secondary" id="btn-global-export" title="Export Production & Loss Records as CSV"
+        style="padding: 7px 14px; font-size: 0.8rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+  </header>
 
-Deploy the repository root directly to Vercel.
+  <!-- Application Main Wrapper -->
+  <main class="app-container">
 
-Deployment checklist:
-1. Keep the root files exactly as they are now.
-2. Ensure `index.html` remains at the host root.
-3. Verify the CDN links for Supabase and Chart.js are reachable in production.
-4. In Vercel, add `VERCEL_SUPABASE_URL` and `VERCEL_SUPABASE_ANON_KEY` as environment variables.
-5. Run `supabase/schema.sql` once in your Supabase SQL editor before using live data.
+    <!-- ==================================================================== -->
+    <!-- PAGE 1: MINIMALIST MACHINE LAUNCHPAD (ONLY 11 MACHINE NAMES)         -->
+    <!-- ==================================================================== -->
+    <section id="view-machines" class="view-container">
+      <div class="minimal-machines-hero">
+        <h2>Production Tracker</h2>
+        <p>Real-time machine monitoring, shift production logs, and OEE downtime loss analytics.</p>
+      </div>
 
-### Vercel Setup
+      <!-- 11 Machine Names Grid -->
+      <div class="minimal-machines-grid" id="minimal-machines-grid">
+        <!-- Machine cards generated dynamically by app.js -->
+      </div>
+    </section>
 
-1. Import the repository into Vercel.
-2. Leave the build command empty unless you later add a bundler.
-3. Set the output root to the repository root.
-4. Add `VERCEL_SUPABASE_URL` and `VERCEL_SUPABASE_ANON_KEY` in the project environment settings.
-5. Deploy once, then verify that saving and dashboard loading work against Supabase.
-6. For local development, use `npx vercel dev` with the same `.env.local` values.
-7. If you want to apply the schema directly, run `supabase/schema.sql` in the Supabase SQL Editor. This environment cannot push schema changes with only the anon key.
 
-### Production Notes
+    <!-- ==================================================================== -->
+    <!-- PAGE 2: DEDICATED MACHINE PRODUCTION & 13-LOSS FILL-UP TAB          -->
+    <!-- ==================================================================== -->
+    <section id="view-fillup" class="view-container hidden">
+      <!-- Fillup Header -->
+      <div class="fillup-top-nav">
+        <div class="fillup-title-area">
+          <button class="back-btn" id="btn-back-to-machines">
+            <svg viewBox="0 0 24 24">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Machines Roster
+          </button>
+          <div class="active-machine-badge-group">
+            <h2 id="active-machine-name">CNC DX 200-1</h2>
+            <span class="machine-tag-pill" id="active-machine-type">CNC</span>
+          </div>
+        </div>
 
-1. Do not commit Supabase credentials to git.
-2. The Clear Data button now only resets local browser cache, which is safer for a shared deployment.
-3. For stricter multi-user control, add Supabase Auth and admin-only actions later.
+        <div class="fillup-quick-switcher">
+          <label style="font-size: 0.8rem; color: var(--text-muted);">Switch Machine:</label>
+          <select id="select-quick-machine">
+            <!-- 11 machines options populated by JS -->
+          </select>
+        </div>
+      </div>
 
----
+      <!-- Production Entry Form -->
+      <form id="production-detail-form">
+        <div class="form-cards-stack">
 
-## 🗄️ Supabase Cloud Database Integration
+          <!-- 1. Shift & Operator Details -->
+          <div class="form-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Shift & Operator Information
+              </div>
+              <span class="panel-step-badge">STEP 1</span>
+            </div>
 
-1. Log into your [Supabase Dashboard](https://supabase.com).
-2. Open the **SQL Editor** tab.
-3. Paste the contents of `supabase/schema.sql` and click **Run**.
-4. Add `VERCEL_SUPABASE_URL` and `VERCEL_SUPABASE_ANON_KEY` in Vercel or `.env.local`.
-5. Once connected, the header will display **"🟢 Supabase: Connected"**, and every new production entry is stored live in your Supabase PostgreSQL cloud database.
+            <div class="grid-4-col">
+              <div class="form-group">
+                <label for="input-date">Log Date *</label>
+                <input type="date" id="input-date" required />
+              </div>
 
----
+              <div class="form-group">
+                <label for="input-shift">Shift *</label>
+                <select id="input-shift" required>
+                  <option value="Shift A">Shift A (06:00 - 14:00)</option>
+                  <option value="Shift B">Shift B (14:00 - 22:00)</option>
+                  <option value="Shift C">Shift C (22:00 - 06:00)</option>
+                </select>
+              </div>
 
-## 🧹 Clearing Data for Fresh Production Entry
+              <div class="form-group">
+                <label for="input-shift-hours">Shift Hours *</label>
+                <select id="input-shift-hours" required>
+                  <option value="8.5">8.5 Hours (465 Mins Planned)</option>
+                  <option value="7.0">7.0 Hours (390 Mins Planned)</option>
+                </select>
+              </div>
 
-- Click the **"Clear Data"** button in the header at any time.
-- This resets all stored production entries, zeros the live dashboard, and clears the production form so you can immediately begin recording fresh machine shifts without old sample data.
+              <div class="form-group">
+                <label for="input-operator">Operator Name *</label>
+                <input type="text" id="input-operator" placeholder="Enter Operator Name" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Multi-Part Production Section (Part 1, Part 2, Part 3) -->
+          <div class="form-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                Multi-Part Output & Cycle Times
+              </div>
+              <span class="panel-step-badge">STEP 2</span>
+            </div>
+
+            <div class="parts-row-container">
+              <!-- Part Number 1 -->
+              <div class="part-entry-row">
+                <div class="part-badge-tag">PART 1</div>
+                <div class="form-group">
+                  <label for="input-part1-name">Part Number / Name *</label>
+                  <input type="text" id="input-part1-name" placeholder="e.g. Pinion-Shaft-45" required />
+                </div>
+                <div class="form-group">
+                  <label for="input-part1-cycle">Cycle Time (Mins) *</label>
+                  <input type="number" step="0.1" min="0" inputmode="decimal" id="input-part1-cycle" placeholder="0.0"
+                    value="0" required />
+                </div>
+                <div class="form-group">
+                  <label for="input-part1-qty">Part 1 Quantity *</label>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-part1-qty" placeholder="0"
+                    value="0" required />
+                </div>
+              </div>
+
+              <!-- Part Number 2 -->
+              <div class="part-entry-row">
+                <div class="part-badge-tag">PART 2</div>
+                <div class="form-group">
+                  <label for="input-part2-name">Part Number / Name (Optional)</label>
+                  <input type="text" id="input-part2-name" placeholder="Optional 2nd Component" />
+                </div>
+                <div class="form-group">
+                  <label for="input-part2-cycle">Cycle Time (Mins)</label>
+                  <input type="number" step="0.1" min="0" inputmode="decimal" id="input-part2-cycle" placeholder="0"
+                    value="0" />
+                </div>
+                <div class="form-group">
+                  <label for="input-part2-qty">Part 2 Quantity</label>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-part2-qty" placeholder="0"
+                    value="0" />
+                </div>
+              </div>
+
+              <!-- Part Number 3 -->
+              <div class="part-entry-row">
+                <div class="part-badge-tag">PART 3</div>
+                <div class="form-group">
+                  <label for="input-part3-name">Part Number / Name (Optional)</label>
+                  <input type="text" id="input-part3-name" placeholder="Optional 3rd Component" />
+                </div>
+                <div class="form-group">
+                  <label for="input-part3-cycle">Cycle Time (Mins)</label>
+                  <input type="number" step="0.1" min="0" inputmode="decimal" id="input-part3-cycle" placeholder="0"
+                    value="0" />
+                </div>
+                <div class="form-group">
+                  <label for="input-part3-qty">Part 3 Quantity</label>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-part3-qty" placeholder="0"
+                    value="0" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Scrap / Rejected Quantity for Quality Calculation -->
+            <div style="margin-top: 18px; max-width: 260px;">
+              <div class="form-group">
+                <label for="input-rejected-qty">Total Rejected / Scrap Quantity</label>
+                <input type="number" min="0" inputmode="numeric" pattern="[0-9]*" id="input-rejected-qty" value="0" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Losses in Minutes (Exact 13 Categories + Remarks) -->
+          <div class="form-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                Shopfloor Losses (in Minutes) - 13 Standard Categories
+              </div>
+              <span class="panel-step-badge">STEP 3</span>
+            </div>
+
+            <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 18px;">
+              Enter the duration in minutes for any stoppage or loss that occurred during the shift.
+            </p>
+
+            <!-- 13 Loss Inputs -->
+            <div class="losses-13-grid">
+              <!-- 1. Breakdown Loss -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">1. Breakdown Loss</span>
+                  <span class="loss-cat-tag">Equipment</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_breakdown" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_breakdown" data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_breakdown" value="0" />
+                </div>
+              </div>
+
+              <!-- 2. No Plan -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">2. No Plan</span>
+                  <span class="loss-cat-tag">Management</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_no_plan" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_no_plan" data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_no_plan" value="0" />
+                </div>
+              </div>
+
+              <!-- 3. No Material -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">3. No Material</span>
+                  <span class="loss-cat-tag">Logistics</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_no_material" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_no_material"
+                      data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_no_material" value="0" />
+                </div>
+              </div>
+
+              <!-- 4. No Operator -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">4. No Operator</span>
+                  <span class="loss-cat-tag">Manpower</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_no_operator" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_no_operator"
+                      data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_no_operator" value="0" />
+                </div>
+              </div>
+
+              <!-- 5. Start Up -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">5. Start Up</span>
+                  <span class="loss-cat-tag">Process</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_startup" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_startup" data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_startup" value="0" />
+                </div>
+              </div>
+
+              <!-- 6. Setup -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">6. Setup</span>
+                  <span class="loss-cat-tag">Process</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_setup" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_setup" data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_setup" value="0" />
+                </div>
+              </div>
+
+              <!-- 7. Jig & Fixture Issue -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">7. Jig & Fixture Issue</span>
+                  <span class="loss-cat-tag">Tooling</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_jig_fixture" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_jig_fixture"
+                      data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_jig_fixture" value="0" />
+                </div>
+              </div>
+
+              <!-- 8. Programming Loss -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">8. Programming Loss</span>
+                  <span class="loss-cat-tag">Process</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_programming" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_programming"
+                      data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_programming" value="0" />
+                </div>
+              </div>
+
+              <!-- 9. Measurement & Adjustment -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">9. Measurement & Adjust</span>
+                  <span class="loss-cat-tag">Quality</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_measurement" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_measurement"
+                      data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_measurement" value="0" />
+                </div>
+              </div>
+
+              <!-- 10. Document Loss -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">10. Document Loss</span>
+                  <span class="loss-cat-tag">Management</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_document" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_document" data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_document" value="0" />
+                </div>
+              </div>
+
+              <!-- 11. Speed Loss -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">11. Speed Loss</span>
+                  <span class="loss-cat-tag">Performance</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_speed" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_speed" data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_speed" value="0" />
+                </div>
+              </div>
+
+              <!-- 12. Quality Inspection -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">12. Quality Inspection</span>
+                  <span class="loss-cat-tag">Quality</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_quality_insp"
+                      data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_quality_insp"
+                      data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_quality_insp" value="0" />
+                </div>
+              </div>
+
+              <!-- 13. Cleaning -->
+              <div class="loss-input-card">
+                <div class="loss-label-box">
+                  <span class="loss-name">13. Cleaning</span>
+                  <span class="loss-cat-tag">Maintenance</span>
+                </div>
+                <div class="loss-control-group">
+                  <div class="quick-chips">
+                    <button type="button" class="btn-loss-chip" data-target="loss_cleaning" data-add="5">+5m</button>
+                    <button type="button" class="btn-loss-chip" data-target="loss_cleaning" data-add="15">+15m</button>
+                  </div>
+                  <input type="number" min="0" inputmode="numeric" pattern="[0-9]*"
+                    class="loss-number-field loss-calc-trigger" id="loss_cleaning" value="0" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Remarks / Root Cause -->
+            <div class="form-group">
+              <label for="input-remarks">Remarks (Why Did Losses Occur / Root Cause) *</label>
+              <textarea id="input-remarks" rows="2"
+                placeholder="Specify reasons for stoppages, insert wear, setting delays, or material wait..."></textarea>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Live Auto-Calculated OEE Ribbon -->
+        <div class="oee-calc-ribbon">
+          <div class="calc-block">
+            <span class="calc-block-label">Shift Time</span>
+            <span class="calc-block-val" id="live-calc-planned-time">465m</span>
+          </div>
+
+          <div class="calc-block">
+            <span class="calc-block-label">Total Losses</span>
+            <span class="calc-block-val" style="color: var(--rose-400);" id="live-calc-total-loss">0m</span>
+          </div>
+
+          <div class="calc-block">
+            <span class="calc-block-label">Operating Time</span>
+            <span class="calc-block-val" style="color: var(--emerald-400);" id="live-calc-operating-time">465m</span>
+          </div>
+
+          <div class="calc-block">
+            <span class="calc-block-label">Availability (A)</span>
+            <span class="calc-block-val" id="live-calc-availability">100.0%</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">Uptime
+              Efficiency</span>
+          </div>
+
+          <div class="calc-block">
+            <span class="calc-block-label">Performance (P)</span>
+            <span class="calc-block-val" id="live-calc-performance">0.0%</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">Speed & Run
+              Rate</span>
+          </div>
+
+          <div class="calc-block">
+            <span class="calc-block-label">Quality (Q)</span>
+            <span class="calc-block-val" id="live-calc-quality">100.0%</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">First-Pass
+              Yield</span>
+          </div>
+
+          <div class="calc-block">
+            <span class="calc-block-label">Overall OEE</span>
+            <span class="calc-block-val highlight-oee" id="live-calc-oee">0.0%</span>
+            <span
+              style="font-size: 0.68rem; color: var(--cyan-400); font-family: var(--font-sans); font-weight: 700;">Overall
+              Effectiveness</span>
+          </div>
+
+          <div class="calc-block">
+            <span class="calc-block-label">Productivity</span>
+            <span class="calc-block-val" style="color: var(--amber-400);" id="live-calc-productivity">0.0</span>
+            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-sans);">Good Parts / Operating Hr</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="form-action-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-entry">Cancel & Return</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-entry"
+            style="padding: 11px 28px; font-size: 0.95rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Save Record & View Dashboard
+          </button>
+        </div>
+      </form>
+    </section>
+
+
+    <!-- ==================================================================== -->
+    <!-- PAGE 3: EXECUTIVE OEE & LOSS OCCURRENCE DASHBOARD                    -->
+    <!-- ==================================================================== -->
+    <section id="view-analytics" class="view-container hidden">
+      <!-- Dashboard Header -->
+      <div class="dashboard-header-bar">
+        <div class="dashboard-title-area">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+            <h2>Shopfloor OEE & Loss Occurrence Dashboard</h2>
+            <span class="live-stream-badge" title="Database auto-polls live records every 5 seconds">
+              <span class="ping-dot"></span>
+              <span>LIVE DB AUTO-SYNC</span>
+            </span>
+          </div>
+          <p>Daily, weekly, and monthly performance intelligence with ISO time-weighted OEE & 13 downtime loss breakdowns for each machine separately.</p>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="dashboard-filters" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary" id="btn-seed-sample" title="Populate realistic 3-week test records across CNC, VMC & HMC machines to explore all views immediately"
+            style="padding: 7px 14px; font-size: 0.8rem; border-color: rgba(99, 102, 241, 0.4); color: var(--indigo-400);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            ⚡ Load Sample Data
+          </button>
+
+          <button type="button" class="btn btn-secondary" id="btn-export-period-csv" title="Export this period's machine matrix, 13 losses, and history to CSV"
+            style="padding: 7px 14px; font-size: 0.8rem; border-color: rgba(6, 182, 212, 0.4); color: var(--cyan-400);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            📥 Export Period CSV
+          </button>
+
+          <select id="dash-filter-machine" class="dashboard-select" style="display: none;">
+            <option value="ALL">All 11 Machines (Combined Line)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- PERIODIC ANALYSIS CONTROL CONSOLE                                   -->
+      <!-- ==================================================================== -->
+      <div class="periodic-control-console">
+        <!-- Row 1: Time Horizon Tabs & Interval Picker -->
+        <div class="console-row-horizon">
+          <div class="console-label-group">
+            <span class="console-kicker">1. TIME HORIZON</span>
+            <div class="period-tabs-group" id="period-tabs-group">
+              <button type="button" class="period-tab-btn active" data-period="daily">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Daily (Each Day)
+              </button>
+              <button type="button" class="period-tab-btn" data-period="weekly">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                  <line x1="10" y1="14" x2="14" y2="14"></line>
+                </svg>
+                Weekly (ISO Weeks)
+              </button>
+              <button type="button" class="period-tab-btn" data-period="monthly">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="12" cy="14" r="3"></circle>
+                </svg>
+                Monthly
+              </button>
+              <button type="button" class="period-tab-btn" data-period="overall">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                Overall (All-Time)
+              </button>
+            </div>
+          </div>
+
+          <div class="console-interval-picker">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span class="console-kicker" id="label-interval-picker">SELECT SPECIFIC DAY</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="select-period-interval" class="dashboard-select period-interval-select">
+                  <!-- Populated dynamically: Days, Weeks, or Months -->
+                </select>
+                <button type="button" class="btn btn-secondary btn-icon-only" id="btn-period-prev" title="Previous Period">◀</button>
+                <button type="button" class="btn btn-secondary btn-icon-only" id="btn-period-next" title="Next Period">▶</button>
+              </div>
+            </div>
+            <div class="active-period-tag" id="badge-active-period-label">
+              <span class="indicator-dot"></span>
+              <span id="txt-active-period">Latest Day</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: 11 Machine Roster Quick-Pills (Separation for each machine) -->
+        <div class="console-row-machines">
+          <div class="console-machines-header">
+            <span class="console-kicker">2. MACHINE SELECTION (EVALUATE EACH MACHINE SEPARATELY OR COMBINED MATRIX)</span>
+            <span class="active-machine-inspecting" id="txt-active-target-title">Currently Inspecting: All 11 Machines Matrix</span>
+          </div>
+
+          <div class="machine-roster-pills-bar" id="machine-roster-pills">
+            <!-- Combined Line Pill -->
+            <button type="button" class="machine-pill-btn active pill-all" data-machine-code="ALL">
+              <span class="pill-dot"></span>
+              🏢 All 11 Machines Matrix
+            </button>
+
+            <span class="pill-divider"></span>
+
+            <!-- CNC Machines Group -->
+            <span class="machine-group-tag tag-cnc">CNC</span>
+            <button type="button" class="machine-pill-btn pill-cnc" data-machine-code="CNC-DX200-1">CNC DX 200-1</button>
+            <button type="button" class="machine-pill-btn pill-cnc" data-machine-code="CNC-200-2">CNC 200-2</button>
+            <button type="button" class="machine-pill-btn pill-cnc" data-machine-code="CNC-DX250">CNC DX 250</button>
+            <button type="button" class="machine-pill-btn pill-cnc" data-machine-code="CNC-DX12B">CNC DX12B</button>
+
+            <span class="pill-divider"></span>
+
+            <!-- VMC Machines Group -->
+            <span class="machine-group-tag tag-vmc">VMC</span>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-1050">VMC 1050</button>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-1880">VMC 1880</button>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-850">VMC 850</button>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-HAAS">VMC HAAS</button>
+            <button type="button" class="machine-pill-btn pill-vmc" data-machine-code="VMC-PX20">VMC PX 20</button>
+
+            <span class="pill-divider"></span>
+
+            <!-- HMC Machines Group -->
+            <span class="machine-group-tag tag-hmc">HMC</span>
+            <button type="button" class="machine-pill-btn pill-hmc" data-machine-code="HMC-1">HMC 1</button>
+            <button type="button" class="machine-pill-btn pill-hmc" data-machine-code="HMC-2">HMC 2</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- EXECUTIVE OEE COCKPIT FOR SELECTED MACHINE & HORIZON                -->
+      <!-- ==================================================================== -->
+      <div class="executive-cockpit-grid">
+        <!-- Main Circular OEE Radial Gauge Card -->
+        <div class="gauge-hero-card">
+          <div class="gauge-hero-header">
+            <div class="gauge-title-box">
+              <span class="gauge-badge-kicker" id="target-kicker-name">Shopfloor Health Index</span>
+              <h3 class="gauge-main-title" id="target-main-title">Overall Equipment Effectiveness</h3>
+            </div>
+            <span class="oee-rating-badge" id="oee-rating-badge">Optimal (≥ 85%)</span>
+          </div>
+
+          <div class="radial-gauge-display">
+            <svg class="oee-svg-ring" viewBox="0 0 140 140">
+              <circle class="ring-bg" cx="70" cy="70" r="56" />
+              <circle class="ring-fill" id="oee-radial-ring" cx="70" cy="70" r="56" />
+            </svg>
+            <div class="radial-center-content">
+              <div class="radial-oee-value">
+                <span id="dash-metric-oee">0.0</span><span class="unit">%</span>
+              </div>
+              <span class="radial-oee-sub" id="target-oee-sub">Target OEE Score</span>
+            </div>
+          </div>
+
+          <div class="gauge-hero-footer">
+            <div class="target-marker">Target Benchmark: <strong>≥ 85.0% World Class</strong></div>
+            <div class="status-marker" id="oee-status-indicator">⚪ Ready for Production Data</div>
+          </div>
+        </div>
+
+        <!-- 3 Core Performance Pillars -->
+        <div class="pillars-stack">
+          <!-- Availability Pillar -->
+          <div class="pillar-card pillar-avail">
+            <div class="pillar-top">
+              <div class="pillar-info">
+                <span class="pillar-name">Availability (A)</span>
+                <span class="pillar-sub">Operating Uptime vs Shift Planned Budget</span>
+              </div>
+              <div class="pillar-val"><span id="dash-metric-avail">0.0</span>%</div>
+            </div>
+            <div class="pillar-progress-track">
+              <div class="pillar-progress-bar" id="bar-avail" style="width: 0%;"></div>
+            </div>
+            <div class="pillar-footer">
+              <span>Operating Time: <strong id="dash-op-time-display">0m</strong></span>
+              <span>Downtime Losses: <strong id="dash-total-losses" style="color: var(--rose-400)">0m</strong></span>
+            </div>
+          </div>
+
+          <!-- Performance Pillar -->
+          <div class="pillar-card pillar-perf">
+            <div class="pillar-top">
+              <div class="pillar-info">
+                <span class="pillar-name">Performance (P)</span>
+                <span class="pillar-sub">Cycle Time Run Rate & Operating Speed</span>
+              </div>
+              <div class="pillar-val"><span id="dash-metric-perf">0.0</span>%</div>
+            </div>
+            <div class="pillar-progress-track">
+              <div class="pillar-progress-bar" id="bar-perf" style="width: 0%;"></div>
+            </div>
+            <div class="pillar-footer">
+              <span>Total Units Produced: <strong id="dash-total-output">0 pcs</strong></span>
+              <span>Ideal Operating Run: <strong id="dash-ideal-time-display" style="color: var(--cyan-400);">0m</strong></span>
+            </div>
+          </div>
+
+          <!-- Quality Pillar -->
+          <div class="pillar-card pillar-qual">
+            <div class="pillar-top">
+              <div class="pillar-info">
+                <span class="pillar-name">Quality (Q)</span>
+                <span class="pillar-sub">First-Pass Yield & Part Conformance</span>
+              </div>
+              <div class="pillar-val"><span id="dash-metric-qual">100.0</span>%</div>
+            </div>
+            <div class="pillar-progress-track">
+              <div class="pillar-progress-bar" id="bar-qual" style="width: 100%;"></div>
+            </div>
+            <div class="pillar-footer">
+              <span>Accepted Good: <strong id="dash-good-output" style="color: var(--emerald-400);">0 pcs</strong></span>
+              <span>Scrap / Reject: <strong id="dash-scrap-output" style="color: var(--rose-400);">0 pcs</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deep-Dive Loss Summary Ribbon -->
+      <div class="loss-deepdive-ribbon">
+        <div class="deepdive-stat-box">
+          <span class="deepdive-label">Total Stoppages Recorded</span>
+          <div class="deepdive-value">
+            <span id="dash-total-incidents">0</span>
+            <span class="unit">times</span>
+          </div>
+          <span class="deepdive-sub">Stoppage frequency count</span>
+        </div>
+
+        <div class="deepdive-stat-box">
+          <span class="deepdive-label">Primary Root-Cause Category</span>
+          <div class="deepdive-value highlight-rose" id="dash-top-loss-name">None</div>
+          <span class="deepdive-sub">Highest lost capacity</span>
+        </div>
+
+        <div class="deepdive-stat-box">
+          <span class="deepdive-label">Mean Downtime per Event (MTTR)</span>
+          <div class="deepdive-value" id="dash-avg-stoppage">0.0m</div>
+          <span class="deepdive-sub">Average minutes per incident</span>
+        </div>
+
+        <div class="deepdive-stat-box">
+          <span class="deepdive-label">Most Frequent Loss Category</span>
+          <div class="deepdive-value highlight-amber" id="dash-most-frequent-loss">None</div>
+          <span class="deepdive-sub">Most repeated stoppage reason</span>
+        </div>
+
+        <div class="deepdive-stat-box highlight-prod-box">
+          <span class="deepdive-label">Productivity (Good/Hr)</span>
+          <div class="deepdive-value" style="color: var(--amber-400);">
+            <span id="dash-metric-productivity">0.0</span>
+            <span class="unit" style="font-size: 0.85rem; color: var(--text-secondary);">parts/hr</span>
+          </div>
+          <span class="deepdive-sub">Total Good Parts / Operating Hours</span>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- SECTION: 11-MACHINE PERFORMANCE COMPARISON MATRIX (SEPARATE MACHINE) -->
+      <!-- ==================================================================== -->
+      <div class="machine-matrix-section" id="section-machine-matrix">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="3" y1="15" x2="21" y2="15"></line>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+              <line x1="15" y1="3" x2="15" y2="21"></line>
+            </svg>
+            11-Machine Performance Matrix (<span id="matrix-period-subtitle">Selected Period</span>)
+          </div>
+          <span style="font-size: 0.78rem; color: var(--cyan-400); font-family: var(--font-mono);">SEPARATE MACHINE BREAKDOWN</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="root-cause-table machine-comparison-table">
+            <thead>
+              <tr>
+                <th>Machine</th>
+                <th>Type</th>
+                <th>Shifts</th>
+                <th>Planned</th>
+                <th>Operating</th>
+                <th>Loss</th>
+                <th>Availability</th>
+                <th>Performance</th>
+                <th>Quality</th>
+                <th>OEE %</th>
+                <th>Productivity (Parts/Hr)</th>
+                <th>Output (Good / Scrap)</th>
+                <th>Primary Downtime Loss</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="machine-matrix-tbody">
+              <!-- Populated dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- SECTION: CHRONOLOGICAL TREND VISUALIZATIONS (OEE & LOSSES EVOLUTION)-->
+      <!-- ==================================================================== -->
+      <div class="charts-grid-2">
+        <!-- 1. OEE & APQ Progression Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <span id="title-trend-oee">OEE & APQ Progression Over Time</span>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--cyan-400); font-family: var(--font-mono);" id="badge-trend-period-type">DAILY TREND</span>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chart-trend-oee"></canvas>
+          </div>
+        </div>
+
+        <!-- 2. Downtime Losses Evolution Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+                <line x1="7" y1="18" x2="7" y2="10"></line>
+                <line x1="12" y1="18" x2="12" y2="6"></line>
+                <line x1="17" y1="18" x2="17" y2="13"></line>
+              </svg>
+              <span id="title-trend-losses">Downtime Losses Progression (Minutes)</span>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--rose-400); font-family: var(--font-mono);">LOSS EVOLUTION</span>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chart-trend-losses"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- SECTION: 13 SHOPFLOOR DOWNTIME LOSSES BREAKDOWN                      -->
+      <!-- ==================================================================== -->
+      <div class="charts-grid-2">
+        <!-- 1. Dual Bar Chart: 13 Losses in Minutes & Incident Frequency -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              <span id="title-loss-pareto">13 Loss Categories: Duration (Mins) & Frequency</span>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--cyan-400); font-family: var(--font-mono);">13 LOSSES</span>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chart-losses-pareto"></canvas>
+          </div>
+        </div>
+
+        <!-- 2. Loss Classification Donut -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10h-10z"></path>
+              </svg>
+              Loss Category Stream Distribution
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Root Streams</span>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chart-losses-donut"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed 13 Losses Table -->
+      <div class="root-cause-section" style="margin-bottom: 32px;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span id="title-losses-table">13 Shopfloor Downtime Losses Distribution & Impact Table</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Loss Impact Matrix</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="root-cause-table loss-breakdown-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Downtime Loss Category</th>
+                <th>Stream / Department</th>
+                <th>Total Minutes</th>
+                <th>Total Hours</th>
+                <th>Incident Count</th>
+                <th>% of Downtime</th>
+                <th>Availability Impact</th>
+              </tr>
+            </thead>
+            <tbody id="losses-breakdown-tbody">
+              <!-- Populated dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- SECTION: CHRONOLOGICAL PERIOD HISTORY TABLE FOR TARGET MACHINE       -->
+      <!-- ==================================================================== -->
+      <div class="root-cause-section" id="section-period-history" style="margin-bottom: 32px;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="title-period-history">Chronological History Table (Day-by-Day / Week-by-Week)</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--cyan-400); font-family: var(--font-mono);" id="badge-history-horizon">HISTORICAL ARCHIVE</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="root-cause-table">
+            <thead>
+              <tr>
+                <th>Period Interval</th>
+                <th>Shifts Logged</th>
+                <th>Planned Mins</th>
+                <th>Operating Mins</th>
+                <th>Loss Mins</th>
+                <th>Availability</th>
+                <th>Performance</th>
+                <th>Quality</th>
+                <th>OEE %</th>
+                <th>Productivity</th>
+                <th>Total Produced</th>
+                <th>Good Units</th>
+                <th>Scrap Units</th>
+                <th>Top Stoppage Reason</th>
+              </tr>
+            </thead>
+            <tbody id="period-history-tbody">
+              <!-- Populated dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================================================================== -->
+      <!-- SECTION: WHY & HOW LOSSES OCCURRED ROOT CAUSE AUDIT                  -->
+      <!-- ==================================================================== -->
+      <div class="root-cause-section">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            Why & How Losses Occurred (Incident Root-Cause Diagnostics)
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Operator Stoppage Audit</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="root-cause-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Shift</th>
+                <th>Machine</th>
+                <th>Operator</th>
+                <th>Loss Category</th>
+                <th>Why It Occurred</th>
+                <th>How It Occurred (Root Cause Diagnosis)</th>
+                <th>Downtime</th>
+              </tr>
+            </thead>
+            <tbody id="root-cause-tbody">
+              <!-- Dynamically populated by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================================================================== -->
+  <!-- MODAL: SUPABASE DATABASE CONNECTION SETTINGS                         -->
+  <!-- ==================================================================== -->
+  <div class="modal-overlay hidden" id="modal-supabase">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Connect Supabase Database</h3>
+        <button class="modal-close-btn" id="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 18px;">
+          Paste your Supabase credentials to synchronize multi-part production logs and 13-loss breakdown records
+          directly with your cloud PostgreSQL database.
+        </p>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="cfg-supabase-url">Supabase Project URL</label>
+          <input type="text" id="cfg-supabase-url" placeholder="https://your-project.supabase.co" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="cfg-supabase-key">Supabase Public Anon Key</label>
+          <input type="password" id="cfg-supabase-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+        </div>
+
+        <div id="supabase-test-result"
+          style="display: none; padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.85rem; margin-top: 12px;">
+        </div>
+
+        <div
+          style="margin-top: 18px; padding: 12px; background: rgba(0, 0, 0, 0.3); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
+          <strong style="color: var(--cyan-400)">Quick Setup:</strong> You can also paste your credentials directly in
+          <code>js/config.js</code>.<br />
+          <strong style="color: var(--emerald-400)">SQL Schema:</strong> Run the script in
+          <code>supabase/schema.sql</code> in your Supabase SQL Editor to create tables with public anon RLS
+          permissions.
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-secondary" id="btn-disconnect-supabase"
+          style="color: var(--rose-400); border-color: rgba(244, 63, 94, 0.3);">Disconnect</button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" id="btn-test-supabase">Test Connection</button>
+          <button type="button" class="btn btn-primary" id="btn-save-supabase">Save & Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- MODAL: ANDROID MOBILE ACCESS & QR CODE                               -->
+  <!-- ==================================================================== -->
+  <div class="modal-overlay hidden" id="modal-mobile-qr">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      <div class="modal-header">
+        <h3 style="display: flex; align-items: center; gap: 8px; justify-content: center; width: 100%;">
+          📱 Android Mobile Access
+        </h3>
+        <button class="modal-close-btn" id="btn-close-qr-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 22px 20px;">
+        <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 16px;">
+          Scan with your Android camera or Chrome browser to manage machine production details and 13 losses straight
+          from the shopfloor:
+        </p>
+        <div
+          style="background: white; padding: 14px; border-radius: var(--radius-lg); display: inline-block; box-shadow: 0 8px 30px rgba(0,0,0,0.5); margin-bottom: 16px;">
+          <img src="assets/mobile_qr.png" alt="Shopfloor Mobile QR Code"
+            style="width: 210px; height: 210px; display: block; image-rendering: pixelated;" />
+        </div>
+        <div
+          style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-md); padding: 10px 14px; font-family: var(--font-mono); font-size: 0.95rem; color: var(--cyan-400); margin-bottom: 14px; user-select: all; font-weight: 600;">
+          http://10.204.85.125:3000
+        </div>
+        <div
+          style="text-align: left; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-md);">
+          💡 <strong>Shopfloor Operator Quick Steps:</strong><br />
+          1. Connect Android device to the factory / shopfloor Wi-Fi.<br />
+          2. Open the URL or scan the QR code above.<br />
+          3. Tap <strong>&vellip; (Chrome menu) &rarr; "Add to Home screen"</strong> to install as a full-screen app!
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button type="button" class="btn btn-secondary" id="btn-dismiss-qr-modal"
+          style="min-width: 140px;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- App Orchestrator Script -->
+  <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
